@@ -1,0 +1,40 @@
+.container {
+    width: 400px;
+    margin: 200px auto;
+    border-radius: 3px;
+    box-shadow: 0 2px 5px 0 rgba(0, 0, 0, .16), 0 2px 10px 0 rgba(0, 0, 0, .12);
+    overflow: hidden;
+}
+
+.collapse-wrapper {
+    display: block;
+    background: #fff;
+    padding-top: 49px;
+    cursor: pointer;
+    overflow: hidden
+}
+
+.title {
+	position: absolute;
+	margin-top: -40px;
+	margin-left: 10px;
+}
+
+.hide {
+    display: none;
+}
+
+.text-wrapper {
+    background: #EFEFEF;
+    height: 0
+}
+
+.text {
+	display: block;
+	padding: 10px;
+}
+
+.radio:checked + .text-wrapper {
+	height: auto;
+}
+
