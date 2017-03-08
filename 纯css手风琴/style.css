@@ -26,7 +26,8 @@
 
 .text-wrapper {
     background: #EFEFEF;
-    height: 0
+    max-height: 0;
+    transition:  all 0.3s ease-in-out;
 }
 
 .text {
@@ -35,6 +36,6 @@
 }
 
 .radio:checked + .text-wrapper {
-	height: auto;
+	max-height: 300px;
 }
 
