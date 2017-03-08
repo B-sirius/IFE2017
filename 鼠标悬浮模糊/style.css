@@ -1,0 +1,132 @@
+html,
+body {
+    height: 100%;
+    margin: 0;
+}
+
+body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.container {
+    position: relative;
+}
+
+.box {
+    position: absolute;
+    display: inline-block;
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    padding: 50px;
+}
+
+.text-wrapper {
+    font-size: 58px;
+    line-height: 400px;
+    position: absolute;
+    z-index: 1;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: inline-block;
+    box-sizing: border-box;
+    width: 700px;
+    height: 450px;
+    margin: auto;
+    transition: .5s;
+    text-align: center;
+}
+
+.text-wrapper .text {
+    transition: .5s;
+    animation: streamer 2s infinite linear;
+    opacity: 0;
+    /* 字体颜色为透明,露出底下的背景 */
+    color: transparent;
+    /* 绘制渐变背景图 */
+    background-image: -webkit-linear-gradient(left, #a6adff, #fff 25%, #a6adff 50%, #fff 75%, #a6adff 100%);
+    /* 使用文字作为裁剪区域向外裁剪 */
+    -webkit-background-clip: text;
+    /* 将背景图拉长到两倍,这样动画时背景才能跑马灯 */
+    background-size: 200% 100%;
+}
+
+
+/* 动画即移动背景位置 */
+
+@keyframes streamer {
+    0% {
+        background-position: 0 0;
+    }
+    100% {
+        background-position: -100% 0;
+    }
+}
+
+.text-wrapper::after,
+.text-wrapper::before {
+    position: absolute;
+    overflow: hidden;
+    box-sizing: border-box;
+    content: '';
+    transition: all .5s;
+    opacity: 0;
+}
+
+
+/* 只显示上下边框,整个盒子从中间向两边展开 */
+
+.text-wrapper::after {
+    top: 0;
+    left: 50%;
+    width: 0;
+    height: 100%;
+    border-top: 3px solid #f3f3f3;
+    border-bottom: 3px solid #f3f3f3;
+}
+
+
+/* 只显示左右边框,整个盒子从中间向上下展开 */
+
+.text-wrapper::before {
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 0;
+    border-right: 3px solid #f3f3f3;
+    border-left: 3px solid #f3f3f3;
+}
+
+.container:hover .text-wrapper::after {
+    left: 0;
+    width: 100%;
+    opacity: 1;
+}
+
+.container:hover .text-wrapper::before {
+    top: 0;
+    height: 100%;
+    opacity: 1;
+}
+
+.container:hover .text-wrapper {
+    box-shadow: 0 0 30px 20px rgba(0, 0, 0, .46);
+}
+
+.container:hover .text-wrapper .text {
+    height: auto;
+    opacity: 1;
+}
+
+.container img {
+    width: 800px;
+    transition: .5s;
+}
+
+.container:hover img {
+    filter: blur(3px);
+}
