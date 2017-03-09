@@ -1,0 +1,171 @@
+html,
+body
+{
+    height: 100%;
+    margin: 0;
+}
+.container
+{
+    display: flex;
+
+    height: 100%;
+
+    align-items: center;
+    justify-content: center;
+}
+
+.loading-wrapper
+{
+    position: relative;
+
+    display: inline-block;
+
+    width: 100px;
+    height: 100px;
+}
+.loading-wrapper .border
+{
+    box-sizing: border-box;
+    width: 100px;
+    height: 100px;
+
+    animation: 1s border-roll linear infinite;
+
+    border: 2px solid #cf12ff;
+    border-left: 2px solid transparent;
+    border-radius: 50px;
+}
+
+.loading-wrapper .circle
+{
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+
+    width: 0;
+    height: 0;
+    margin: auto;
+
+    transform: rotate(-45deg);
+
+    border-top: 25px solid #cf12ff;
+    border-right: 25px solid #ff93ea;
+    border-bottom: 25px solid #ff93ea;
+    border-left: 25px solid #cf12ff;
+    border-radius: 25px;
+}
+
+.loading-wrapper .circle .half-circle-1,
+.loading-wrapper .circle .half-circle-2
+{
+    position: absolute;
+    top: -25px;
+    left: -25px;
+
+    width: 25px;
+    height: 50px;
+
+    transform-origin: 100% 50% 0;
+
+    border-top-left-radius: 50px;
+    border-bottom-left-radius: 50px;
+}
+
+.loading-wrapper .circle .half-circle-1
+{
+    animation: 2s circle-roll-1 linear infinite;
+
+    background: #ff93ea;
+}
+
+.loading-wrapper .circle .half-circle-2
+{
+    animation: 2s circle-roll-2 linear infinite;
+    animation-delay: 0.5s;
+
+    background: #cf12ff;
+}
+
+@keyframes border-roll
+{
+    0%
+    {
+        transform: rotate(0);
+    }
+    100%
+    {
+        transform: rotate(-360deg);
+    }
+}
+
+@keyframes circle-roll-1
+{
+    0%
+    {
+        z-index: 1;
+
+        transform: rotate(45deg);
+    }
+    25%
+    {
+        z-index: 1;
+
+        transform: rotate(-135deg);
+    }
+    25.001%
+    {
+        z-index: 0;
+
+        transform: rotate(-135deg);
+    }
+    50%
+    {
+        z-index: 0;
+
+        transform: rotate(-135deg);
+    }
+    75%
+    {
+        z-index: 0;
+
+        transform: rotate(-315deg);
+    }
+    75.001%
+    {
+        z-index: 1;
+
+        transform: rotate(-315deg);
+    }
+    100%
+    {
+        z-index: 1;
+
+        transform: rotate(-315deg);
+    }
+}
+
+@keyframes circle-roll-2
+{
+    0%
+    {
+        transform: rotate(45deg);
+    }
+    25%
+    {
+        transform: rotate(-135deg);
+    }
+    50%
+    {
+        transform: rotate(-135deg);
+    }
+    75%
+    {
+        transform: rotate(-315deg);
+    }
+    100%
+    {
+        transform: rotate(-315deg);
+    }
+}
