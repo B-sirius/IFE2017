@@ -1,0 +1,37 @@
+.hide {
+	display: none;
+}
+
+.radio-label, .checkbox-label {
+	display: inline-block;
+	width: 16px;
+	height: 16px;
+	cursor: pointer;
+}
+
+.radio-border, .checkbox-border {
+	position: absolute;
+	width: 16px;
+	height: 16px;
+	box-sizing: border-box;
+	border: solid 2px #E7E7E7;
+	background: url('img/sprite.png') no-repeat;
+	background-position: 16px 0;
+	border-radius: 2px;
+}
+
+.radio-border {
+	border-radius: 8px;
+}
+
+.radio:checked + .radio-border {
+	border:  2px solid #FF23AF;
+	background-position: -18px -2px;
+}
+
+.checkbox:checked + .checkbox-border {
+	border:  2px solid #FF23AF;
+	background-position: -2px -2px;
+}
+
+
