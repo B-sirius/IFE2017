@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>3d轮播图</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="view">
+        <div id="container" class="container">
+            <img class="img1" src="img/test1.jpg">
+            <img class="img2" src="img/test2.jpg">
+            <img class="img3" src="img/test3.jpg">
+        </div>
+    </div>
+</body>
+
+</html>
+
+<script>
+	let imgs = document.getElementsByTagName('img'),
+		container = document.getElementById('container');
+
+	let angle = 0;
+
+	for (let img of imgs) {
+		img.onclick = () => {
+			angle += -120;
+			container.setAttribute("style", `transform: rotateY(${angle}deg)`);
+		}
+	}
+</script>
