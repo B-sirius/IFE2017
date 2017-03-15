@@ -26,6 +26,7 @@ module.exports = {
     'no-trailing-spaces': 0,
     'space-before-function-paren': 0,
     'indent': 0,
-    'semi': 0
+    'semi': 0,
+    'no-unused-vars': 0
   }
 }

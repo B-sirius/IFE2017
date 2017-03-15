@@ -1,15 +1,18 @@
 <template>
     <div class="container">
         <div class="left-content">
-            <div class="title">{{songData.title}}</div>
-            <div class="singer">{{songData.singer}}</div>
-            <div class="progress_bar-wrapper">
+            <div class="title">{{songList[index].title}}</div>
+            <div class="singer">{{songList[index].singer}}</div>
+            <div class="progress-wrapper">
                 <div ref="bar" @click="changePos" class="volume-bar">
                     <div :style="{width: volBtnPos + 'px'}" class="current-bar"></div>
-                    <div ref="controller" @click.stop="stopPass" @mousedown.stop="dragController" :style="{left: volBtnPos + 'px'}" class="controller"></div>
+                    <div ref="volumeController" @click.stop="stopPass" @mousedown.stop="dragController" :style="{left: volBtnPos + 'px'}" class="controller"></div>
                 </div>
                 <div class="left">
-                    <span class="time">2:23</span>
+                    <div class="time">
+                        <span class="currTime">{{getTime(currLen)}}</span>
+                        <span class="totalTime"> / {{getTime(totalLen)}}</span>
+                    </div>
                     <span class="volume-btn"><i :class="volumeClass" aria-hidden="true"></i></span>
                 </div>
                 <div class="right">
@@ -26,8 +29,9 @@
                         <i class="fa fa-share-alt" aria-hidden="true"></i>
                     </span>
                 </div>
-                <div class="progress_bar">
-                    <audio autoplay ref="audio" :src="songData.location"></audio>
+                <div @click="changeProgress" ref="progressBar" class="progress_bar">
+                    <div :style="{width: progress_barLength}" class="current-progress"></div>
+                    <audio autoplay ref="audio" :src="songList[index].location"></audio>
                 </div>
             </div>
             <div class="controller-wrapper">
@@ -37,13 +41,13 @@
                 </div>
                 <div class="right">
                     <span class="bg-icon" @click="switchState"><i :class="controlClass" aria-hidden="true"></i></span>
-                    <span class="bg-icon"><i class="fa fa-step-forward" aria-hidden="true"></i></span>
+                    <span @click="nextSong()" class="bg-icon"><i class="fa fa-step-forward" aria-hidden="true"></i></span>
                 </div>
             </div>
         </div>
         <div class="right-content">
             <div class="cover">
-                <img class="img" :src="defaultCover">
+                <img class="img" :src="cover">
             </div>
         </div>
     </div>
@@ -53,7 +57,34 @@
 export default {
     data() {
         return {
-            songData: {
+            songList: [{
+                'album': 'STEINS;GATE Original Soundtrack+Radio CD(仮)',
+                'album_pic': 'http://img.xiami.net/images/album/img74/94174/4371591424151634_2.jpg',
+                'singer': '阿保剛',
+                'album_pic_m': 'http://img.xiami.net/images/album/img74/94174/4371591424151634_1.jpg',
+                'lyric': '',
+                'location': 'http://om5.alicdn.com/174/94174/437159/1770163789_2249535_l.mp3?auth_key=fb4327a6903bc75200e99170dac12f10-1490151600-0-null',
+                'title': 'GATE OF STEINER -Piano-',
+                'album_pic_l': 'http://img.xiami.net/images/album/img74/94174/4371591424151634.jpg'
+            }, {
+                'album': 'Brit Awards 2015',
+                'album_pic': 'http://img.xiami.net/images/album/img58/23258/2250921901425092190_2.jpg',
+                'singer': 'First Aid Kit',
+                'album_pic_m': 'http://img.xiami.net/images/album/img58/23258/2250921901425092190_1.jpg',
+                'lyric': '',
+                'location': 'http://om5.alicdn.com/258/23258/225092190/1774024646_16366085_l.mp3?auth_key=30b7aec140d489a6194f12cc12b10cc8-1490151600-0-null',
+                'title': 'My Silver Lining',
+                'album_pic_l': 'http://img.xiami.net/images/album/img58/23258/2250921901425092190.jpg'
+            }, {
+                'album': '蔡琴经典(壹)',
+                'album_pic': 'http://img.xiami.net/images/album/img48/1348/69421384850954_2.jpg',
+                'singer': '蔡琴',
+                'album_pic_m': 'http://img.xiami.net/images/album/img48/1348/69421384850954_1.jpg',
+                'lyric': '',
+                'location': 'http://om5.alicdn.com/348/1348/6942/84764_2113348_l.mp3?auth_key=d4d61a2ce447efc110e8104c2bbe2c2f-1490151600-0-null',
+                'title': '被遗忘的时光',
+                'album_pic_l': 'http://img.xiami.net/images/album/img48/1348/69421384850954.jpg'
+            }, {
                 'album': 'WHITE ALBUM2 ORIGINAL SOUNDTRACK～kazusa～',
                 'album_pic': 'http://img.xiami.net/images/album/img24/176/58b3d5fc6e425_8832024_1488180732_2.jpg',
                 'singer': '生天目仁美',
@@ -62,20 +93,25 @@ export default {
                 'location': 'http://om5.alicdn.com/826/75826/2102674458/1795430948_1483092419161.mp3?auth_key=f8d5c0d6594170569545ab09b865dab7-1489892400-0-null',
                 'title': 'WHITE ALBUM',
                 'album_pic_l': 'http://img.xiami.net/images/album/img24/176/58b3d5fc6e425_8832024_1488180732.jpg'
-            },
+            }],
+            index: 0,
             defaultCover: 'http://s4.music.126.net/style/web2/img/default/default_album.jpg',
+            cover: '',
             playState: true,
             maxPos: 113,
-            volBtnPos: 113
+            volBtnPos: 113,
+            totalLen: 0,
+            currLen: 0
         };
     },
     methods: {
-        _coverImage() { // 专辑封面预加载
+        coverImage() { // 专辑封面预加载
             let _self = this;
+            this.cover = this.defaultCover;
             let img = new Image();
-            img.src = this.songData.album_pic;
+            img.src = this.songList[this.index].album_pic;
             img.onload = function() {
-                _self.defaultCover = img.src;
+                _self.cover = img.src;
             };
         },
         switchState() { // 切换播放与暂停
@@ -99,11 +135,14 @@ export default {
             }
 
             // 拖拽时触发回调
-            this.$refs.controller.addEventListener('mousemove', callback);
+            this.$refs.volumeController.addEventListener('mousemove', callback);
             // 松开鼠标取消事件监听
+            this.$refs.volumeController.onmouseout = function() {
+                self.$refs.volumeController.removeEventListener('mousemove', callback);
+            };
             document.body.onmouseup = function() {
-                self.$refs.controller.removeEventListener('mousemove', callback);
-            }
+                self.$refs.volumeController.removeEventListener('mousemove', callback);
+            };
         },
         _dragCallback(e, data) { // 拖拽时触发回调
             (this._throttleV2(() => {
@@ -143,7 +182,7 @@ export default {
                 }
             };
         },
-        setVolume() {
+        setVolume() { // 设置音量(0-1)
             this.$refs.audio.volume = (this.volBtnPos / this.maxPos).toFixed(2);
         },
         changePos(e) { // 通过点击设置条位置
@@ -152,13 +191,50 @@ export default {
         },
         stopPass() { // 阻止按钮事件向下传递,否则会触发changePos
             return;
+        },
+        _setMusicLength() { // 获得音乐的总时长并获得当前播放时长(以秒计)
+            this.$refs.audio.addEventListener('loadedmetadata', () => { // 要在这个事件触发之后才能获得音乐的时长
+                this.totalLen = this.$refs.audio.duration;
+            })
+            let intervalId = setInterval(() => {
+                if (this.$refs.audio.ended) { // 如果播放结束,切换到下首歌
+                    this.nextSong();
+                    return;
+                }
+
+                this.currLen = this.$refs.audio.currentTime; // 设置当前长度
+            }, 500);
+        },
+        getTime(seconds) { // 将秒coverImage转换为 01:13 的格式
+            let m = Math.floor(seconds / 60);
+            if (m < 10) {
+                m = '0' + m;
+            }
+            let s = Math.floor(seconds % 60);
+            if (s < 10) {
+                s = '0' + s;
+            }
+            return m + ':' + s;
+        },
+        changeProgress(e) { // 改变进度条
+            let length = e.offsetX;
+            this.$refs.audio.currentTime = ((length / this.$refs.progressBar.clientWidth) * this.totalLen).toFixed(2);
+            this.currLen = this.$refs.audio.currentTime;
+        },
+        nextSong() {
+            if (this.index === this.songList.length - 1) {
+                this.index = 0;
+            } else {
+                ++this.index;
+            }
+            this.coverImage();
         }
     },
     created() {
-        this._coverImage(); // 预加载头图
+        this.coverImage(); // 预加载头图
     },
     computed: {
-        controlClass() {
+        controlClass() { // 播放&暂停键的样式切换
             const className = {
                 play: 'fa fa-play',
                 pause: 'fa fa-pause'
@@ -169,7 +245,7 @@ export default {
             }
             return className['play'];
         },
-        volumeClass() {
+        volumeClass() { // 静音&开启声音的样式切换
             const className = {
                 volumeOff: 'fa fa-volume-off',
                 volumeOn: 'fa fa-volume-up'
@@ -179,7 +255,13 @@ export default {
                 return className['volumeOff'];
             }
             return className['volumeOn'];
+        },
+        progress_barLength() {
+            return (this.currLen / this.totalLen).toFixed(4) * 100 + '%';
         }
+    },
+    mounted: function() {
+        this._setMusicLength();
     }
 }
 </script>
@@ -190,6 +272,7 @@ $black: #696769;
 $dark: #828282;
 $grey: #C1C1C1;
 $lightGrey: #E1E1E1;
+$darkGreen: #0AAA46;
 $green: #00C84B;
 $white: #FFF;
 .container {
@@ -209,7 +292,7 @@ $white: #FFF;
             color: $dark;
             font-size: 20px;
         }
-        .progress_bar-wrapper {
+        .progress-wrapper {
             position: relative;
             height: 25px;
             line-height: 25px;
@@ -218,7 +301,7 @@ $white: #FFF;
             .volume-bar {
                 position: absolute;
                 top: 10px;
-                left: 79px;
+                left: 119px;
                 display: inline-block;
                 width: 113px;
                 height: 3px;
@@ -230,7 +313,7 @@ $white: #FFF;
                     left: 0;
                     top: 0;
                     height: 3px;
-                    background: $green;
+                    background: $darkGreen;
                     border-radius: 2px;
                 }
                 .controller {
@@ -256,9 +339,16 @@ $white: #FFF;
             .left {
                 float: left;
                 display: flex;
-                width: 64px;
+                width: 109px;
                 justify-content: space-between;
                 font-size: 14px;
+                .time {
+                    display: inline-block;
+                }
+                .volume-btn {
+                    width: 14px;
+                    text-align: center;
+                }
             }
             .right {
                 float: right;
@@ -273,17 +363,17 @@ $white: #FFF;
             }
             .progress_bar {
                 position: absolute;
-                bottom: -3px;
+                bottom: -5px;
                 width: 100%;
-                height: 1px;
-                background: $grey;
-            }
-            .progress_bar:after {
-                content: '';
-                position: absolute;
-                width: 50%;
-                height: 1px;
-                background: $green;
+                height: 3px;
+                border-top: 1px solid $grey;
+                cursor: pointer;
+                overflow: hidden;
+                .current-progress {
+                    position: absolute;
+                    height: 3px;
+                    background: $green;
+                }
             }
         }
         .controller-wrapper {
@@ -311,17 +401,17 @@ $white: #FFF;
     }
     .right-content {
         display: flex;
-        width: 340px;
+        width: 280px;
         align-items: center;
         .cover {
-            width: 240px;
-            height: 240px;
-            border-radius: 50%;
+            width: 210px;
+            height: 210px;
+            border-radius: 3px;
             overflow: hidden;
-            margin-left: 25px;
+            margin-left: 35px;
             .img {
-                width: 240px;
-                height: 240px;
+                width: 210px;
+                height: 210px;
             }
         }
     }

@@ -4,7 +4,6 @@ import Vue from 'vue';
 import App from './App';
 import VueRource from 'vue-resource';
 
-import 'font-awesome/css/font-awesome.min.css';
 import './common/sass/reset.scss';
 import './common/sass/base.scss';
 
