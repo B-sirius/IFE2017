@@ -1,12 +1,13 @@
 <template>
     <div class="container">
+        <audio ref="audio" :src="songList[index].location"></audio>
         <div class="left-content">
             <div class="title">{{songList[index].title}}</div>
             <div class="singer">{{songList[index].singer}}</div>
             <div class="progress-wrapper">
-                <div ref="bar" @click="changePos" class="volume-bar">
-                    <div :style="{width: volBtnPos + 'px'}" class="current-bar"></div>
-                    <div ref="volumeController" @click.stop="stopPass" @mousedown.stop="dragController" :style="{left: volBtnPos + 'px'}" class="controller"></div>
+                <div ref="bar" @click="changeVolPos" class="volume-bar">
+                    <div :style="{width: volPos.btn + 'px'}" class="current-bar"></div>
+                    <div ref="volumeController" @click.stop="stopPass" @mousedown.stop="drag($event, 'volPos')" :style="{left: volPos.btn + 'px'}" class="controller"></div>
                 </div>
                 <div class="left">
                     <div class="time">
@@ -29,9 +30,12 @@
                         <i class="fa fa-share-alt" aria-hidden="true"></i>
                     </span>
                 </div>
-                <div @click="changeProgress" ref="progressBar" class="progress_bar">
-                    <div :style="{width: progress_barLength}" class="current-progress"></div>
-                    <audio autoplay ref="audio" :src="songList[index].location"></audio>
+                <div class="progress_bar-wrapper">
+                    <div @click="changeProgress" ref="progressBar" class="progress_bar">
+                        <div :style="{width: progressPos.btn + 'px'}" class="current-progress"></div>
+                    </div>
+                    <div @click.stop="stopPass" @mousedown.stop="drag($event, 'progressPos')" :style="{left: progressPos.btn + 'px'}" class="progress-btn">
+                    </div>
                 </div>
             </div>
             <div class="controller-wrapper">
@@ -52,12 +56,11 @@
         </div>
     </div>
 </template>
-
 <script>
 export default {
     data() {
         return {
-            songList: [{
+            songList: [{ // 歌曲列表
                 'album': 'STEINS;GATE Original Soundtrack+Radio CD(仮)',
                 'album_pic': 'http://img.xiami.net/images/album/img74/94174/4371591424151634_2.jpg',
                 'singer': '阿保剛',
@@ -94,14 +97,26 @@ export default {
                 'title': 'WHITE ALBUM',
                 'album_pic_l': 'http://img.xiami.net/images/album/img24/176/58b3d5fc6e425_8832024_1488180732.jpg'
             }],
-            index: 0,
-            defaultCover: 'http://s4.music.126.net/style/web2/img/default/default_album.jpg',
-            cover: '',
-            playState: true,
-            maxPos: 113,
-            volBtnPos: 113,
-            totalLen: 0,
-            currLen: 0
+            index: 0, // 当前播放的歌曲index
+            defaultCover: 'http://s4.music.126.net/style/web2/img/default/default_album.jpg', // 默认专辑封面url
+            cover: '', // 当前歌曲专辑url
+            play: false, // 歌曲的播放状态
+            volPos: { // 音量条的最大位置和当前位置,单位像素
+                max: 113,
+                btn: 113
+            },
+            progressPos: { // 进度条的最大位置和当前位置,单位像素
+                max: 690,
+                btn: 0
+            },
+            posData: { // 记录拖拽发生时的相关数据
+                mouseStartX: '',
+                btnStartX: ''
+            },
+            btnType: '', // 记录被拖拽的按钮类型
+            totalLen: 0, // 音频总时长,秒为单位
+            currLen: 0, // 当前播放位置,秒为单位
+            intervalId: '' // setProgress中的intervalId
         };
     },
     methods: {
@@ -115,53 +130,50 @@ export default {
             };
         },
         switchState() { // 切换播放与暂停
-            this.playState = !this.playState; // 改变状态
+            this.play = !this.play; // 改变状态
 
-            if (this.playState) {
+            if (this.play) {
                 this.$refs.audio.play();
             } else {
                 this.$refs.audio.pause();
             }
         },
-        dragController(e) { // 拖动音量条
-            let self = this;
-            let posData = {
-                mouseStartX: e.pageX,
-                btnStartX: this.volBtnPos
-            };
+        drag(e, type) { // 拖动各种进度条
+            e.preventDefault(); // 用于阻止在拖拽时选中文字之类
 
-            let callback = function(event) {
-                self._dragCallback(event, posData);
-            }
+            this.posData.mouseStartX = e.pageX;
+            this.posData.btnStartX = this[type].btn;
+            this.btnType = type;
 
-            // 拖拽时触发回调
-            this.$refs.volumeController.addEventListener('mousemove', callback);
-            // 松开鼠标取消事件监听
-            this.$refs.volumeController.onmouseout = function() {
-                self.$refs.volumeController.removeEventListener('mousemove', callback);
-            };
-            document.body.onmouseup = function() {
-                self.$refs.volumeController.removeEventListener('mousemove', callback);
-            };
+            this.btnDownManager(); // 按钮被按下的操作
+
+            // 监听鼠标移动
+            window.addEventListener('mousemove', this._mousemoveCallback);
+            // 监听松开鼠标
+            window.addEventListener('mouseup', this._mouseupCallback);
         },
-        _dragCallback(e, data) { // 拖拽时触发回调
+        _mousemoveCallback(e) { // 移动鼠标时触发回调
             (this._throttleV2(() => {
-                this.moveBtn(e, data);
-                this.setVolume();
+                this.moveBtn(e);
+                this.btnMoveManager();
             }, 10, 15))();
         },
-        moveBtn(e, data) { // 移动按钮函数
-            let distanceX = e.pageX - data.mouseStartX;
-            this.volBtnPos = data.btnStartX + distanceX;
-            if (this.volBtnPos < 0) {
-                this.volBtnPos = 0;
+        _mouseupCallback(e) { // 释放鼠标时触发回调
+            window.removeEventListener('mousemove', this._mousemoveCallback);
+            window.removeEventListener('mouseup', this._mouseupCallback);
+            this.btnUpManager();
+        },
+        moveBtn(e) { // 移动按钮
+            let distanceX = e.pageX - this.posData.mouseStartX;
+            this[this.btnType].btn = this.posData.btnStartX + distanceX;
+            if (this[this.btnType].btn < 0) {
+                this[this.btnType].btn = 0;
             }
-            if (this.volBtnPos > this.maxPos) {
-                this.volBtnPos = this.maxPos;
+            if (this[this.btnType].btn > this[this.btnType].max) {
+                this[this.btnType].btn = this[this.btnType].max;
             }
         },
-        // 用于函数节流，防止短时间多次调用函数
-        _throttleV2(fn, delay, mustRunDelay) {
+        _throttleV2(fn, delay, mustRunDelay) { // 用于函数节流，防止短时间多次调用函数
             let timer = null;
             let tStart;
             return function() {
@@ -182,28 +194,76 @@ export default {
                 }
             };
         },
+        btnDownManager() { // 管理按钮被按下的操作
+            let self = this;
+            let t = {
+                'volPos': function() {
+                    return;
+                },
+                'progressPos': function() { // 按下进度条按钮时,取消播放条与歌曲进度的关联
+                    clearInterval(self.intervalId);
+                }
+            };
+
+            t[this.btnType]();
+        },
+        btnMoveManager(type) { // 管理按钮被移动的操作
+            let self = this;
+            let t = {
+                'volPos': function() { // 移动音量按钮时,实时改变音量
+                    self.setVolume();
+                },
+                'progressPos': function() {
+                    self.currLen = ((self.progressPos.btn / self.progressPos.max) * self.totalLen).toFixed(4)
+                }
+            };
+
+            t[this.btnType]();
+        },
+        btnUpManager(type) { // 管理按钮被释放的操作
+            let self = this;
+            let t = {
+                'volPos': function() {
+                    return;
+                },
+                'progressPos': function() {
+                    self.$refs.audio.currentTime = ((self.progressPos.btn / self.progressPos.max) * self.$refs.audio.duration).toFixed(4); // 设置音乐位置
+                    self.setProgress(); // 释放进度条按钮时,再设置播放进度
+                }
+            };
+
+            t[this.btnType]();
+        },
         setVolume() { // 设置音量(0-1)
-            this.$refs.audio.volume = (this.volBtnPos / this.maxPos).toFixed(2);
+            this.$refs.audio.volume = (this.volPos.btn / this.volPos.max).toFixed(2);
         },
-        changePos(e) { // 通过点击设置条位置
-            this.volBtnPos = e.offsetX;
-            this.setVolume();
-        },
-        stopPass() { // 阻止按钮事件向下传递,否则会触发changePos
-            return;
-        },
-        _setMusicLength() { // 获得音乐的总时长并获得当前播放时长(以秒计)
-            this.$refs.audio.addEventListener('loadedmetadata', () => { // 要在这个事件触发之后才能获得音乐的时长
-                this.totalLen = this.$refs.audio.duration;
-            })
-            let intervalId = setInterval(() => {
+        setProgress() { // 设置进度
+            this.intervalId = setInterval(() => {
                 if (this.$refs.audio.ended) { // 如果播放结束,切换到下首歌
+                    this.currLen = 0; // 防止进度条溢出
                     this.nextSong();
                     return;
                 }
 
                 this.currLen = this.$refs.audio.currentTime; // 设置当前长度
-            }, 500);
+                this.progressPos.btn = parseFloat(((this.currLen / this.totalLen) * this.progressPos.max).toFixed(2));
+            }, 300);
+        },
+        changeVolPos(e) { // 点击设置音量条位置
+            this.volPos.btn = e.offsetX;
+            this.setVolume();
+        },
+        stopPass() { // 阻止按钮事件向下传递,否则会触发changePos
+            return;
+        },
+        initMusic() { // 初始化音乐
+            this.$refs.audio.addEventListener('loadedmetadata', () => { // 要在这个事件触发之后才能获得音乐的相关数据
+                this.totalLen = this.$refs.audio.duration; // 设置音乐时长
+                if (this.play) { // 是否播放音乐
+                    this.$refs.audio.play();
+                }
+            });
+            this.setProgress();
         },
         getTime(seconds) { // 将秒coverImage转换为 01:13 的格式
             let m = Math.floor(seconds / 60);
@@ -216,17 +276,18 @@ export default {
             }
             return m + ':' + s;
         },
-        changeProgress(e) { // 改变进度条
+        changeProgress(e) { // 点击设置进度条位置
             let length = e.offsetX;
             this.$refs.audio.currentTime = ((length / this.$refs.progressBar.clientWidth) * this.totalLen).toFixed(2);
             this.currLen = this.$refs.audio.currentTime;
         },
-        nextSong() {
+        nextSong() { // 切换到下一首歌曲
             if (this.index === this.songList.length - 1) {
                 this.index = 0;
             } else {
                 ++this.index;
             }
+
             this.coverImage();
         }
     },
@@ -240,7 +301,7 @@ export default {
                 pause: 'fa fa-pause'
             };
 
-            if (this.playState) {
+            if (this.play) {
                 return className['pause'];
             }
             return className['play'];
@@ -251,21 +312,17 @@ export default {
                 volumeOn: 'fa fa-volume-up'
             };
 
-            if (this.volBtnPos === 0) {
+            if (this.volPos.btn === 0) {
                 return className['volumeOff'];
             }
             return className['volumeOn'];
-        },
-        progress_barLength() {
-            return (this.currLen / this.totalLen).toFixed(4) * 100 + '%';
         }
     },
     mounted: function() {
-        this._setMusicLength();
+        this.initMusic(); // 初始化音乐信息
     }
 }
 </script>
-
 <style lang="scss">
 $background: #FBFBFB;
 $black: #696769;
@@ -324,7 +381,7 @@ $white: #FFF;
                     width: 14px;
                     height: 14px;
                     background: $white;
-                    border: 1px solid $lightGrey;
+                    border: 1px solid $grey;
                     border-radius: 50%;
                     cursor: pointer;
                 }
@@ -361,18 +418,43 @@ $white: #FFF;
                 color: $dark;
                 cursor: pointer;
             }
-            .progress_bar {
+            .progress_bar-wrapper {
                 position: absolute;
-                bottom: -5px;
+                bottom: -15px;
                 width: 100%;
-                height: 3px;
-                border-top: 1px solid $grey;
-                cursor: pointer;
-                overflow: hidden;
-                .current-progress {
+                .progress_bar {
+                    position: relative;
+                    height: 5px;
+                    background: $grey;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    overflow: hidden;
+                    .current-progress {
+                        position: absolute;
+                        height: 5px;
+                        background: $green;
+                    }
+                }
+                .progress-btn {
                     position: absolute;
-                    height: 3px;
-                    background: $green;
+                    width: 16px;
+                    height: 16px;
+                    background: $white;
+                    border-radius: 50%;
+                    border: 1px solid $grey;
+                    margin-top: -11px;
+                    margin-left: -8px;
+                    cursor: pointer;
+                }
+                .progress-btn:after {
+                    content: '';
+                    position: absolute;
+                    width: 6px;
+                    height: 6px;
+                    left: 5px;
+                    top: 5px;
+                    background: $darkGreen;
+                    border-radius: 50%;
                 }
             }
         }
