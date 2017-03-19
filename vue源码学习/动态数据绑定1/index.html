@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>动态数据绑定1</title>
+</head>
+
+<body>
+
+</body>
+
+<script>
+'use strict';
+
+// 观察者构造函数
+let Observer = function(data) {
+    this.data = data;
+    this.walk(data);
+};
+
+Observer.prototype.walk = function(obj) {
+    let val;
+    for (let key in obj) {
+        if (obj.hasOwnProperty(key)) { // 用于判断该属性是否是对象本身拥有的属性,忽略掉从原型链继承到的属性
+            val = obj[key];
+
+            // 如果对象的属性仍然是对象,也将其进行观察者构造
+            if (typeof val === 'object') {
+                new Observer(val);
+            }
+
+            this.convert(key, val);
+        }
+    }
+};
+
+Observer.prototype.convert = function(key, val) {
+    Object.defineProperty(this.data, key, { // this.data: 需要定义属性的对象; key: 需要定义或修改的属性名; {...}: 将要定义或修改的属性的描述符
+        enumerable: true, // 只有为true时,才能出现在对象的可枚举属性中
+        configurable: true, // 只有为true时,该属性描述符才能被改变和被删除
+        get: function() { // 一个给属性提供getter的方法,该方法返回值被用作属性值
+            console.log(`你访问了${key}`);
+            return val;
+        },
+        set: function(newVal) { // 一个给属性提供setter的方法,该方法接受唯一参数,并将该参数的新值分配给该属性
+            console.log(`你设置了${key}`);
+            console.log(`新的${key}=${newVal}`)
+            if (newVal === val)
+                return;
+            val = newVal;
+        }
+    });
+};
+
+let app1 = new Observer({
+    user: {
+        name: '杨旭益',
+        age: '22'
+    },
+    address: {
+        city: '新日暮里'
+    }
+});
+
+let app2 = new Observer({
+    face: {
+        top: '没有头发',
+        front: '大猩猩'
+    },
+    foot: '强烈的味道'
+});
+</script>
+
+</html>
