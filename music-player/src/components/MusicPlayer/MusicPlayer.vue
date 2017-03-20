@@ -1,9 +1,16 @@
 <template>
-    <div class="container">
+    <div class="player-container">
         <audio ref="audio" :src="songList[index].location"></audio>
         <div class="left-content">
-            <div class="title">{{songList[index].title}}</div>
-            <div class="singer">{{songList[index].singer}}</div>
+            <span class="bg-icon prev"></span>
+            <span class="bg-icon play" @click="switchState"></span>
+            <span @click="nextSong()" class="bg-icon next"></span>
+        </div>
+        <div class="center-content">
+            <div class="intro">
+                <span class="title">{{songList[index].title}}</span>
+                <span class="singer">{{songList[index].singer}}</span>
+            </div>
             <div class="progress-wrapper">
                 <div ref="bar" @click="changeVolPos" class="volume-bar">
                     <div :style="{width: volPos.btn + 'px'}" class="current-bar"></div>
@@ -14,21 +21,7 @@
                         <span class="currTime">{{getTime(currLen)}}</span>
                         <span class="totalTime"> / {{getTime(totalLen)}}</span>
                     </div>
-                    <span class="volume-btn"><i :class="volumeClass" aria-hidden="true"></i></span>
-                </div>
-                <div class="right">
-                    <span class="sm-icon">
-                        <i class="fa fa-list" aria-hidden="true"></i>
-                    </span>
-                    <span class="sm-icon">
-                        <i class="fa fa-download" aria-hidden="true"></i>
-                    </span>
-                    <span class="sm-icon">
-                        <i class="fa fa-plus" aria-hidden="true"></i>
-                    </span>
-                    <span class="sm-icon">
-                        <i class="fa fa-share-alt" aria-hidden="true"></i>
-                    </span>
+                    <span class="volume-btn"></span>
                 </div>
                 <div class="progress_bar-wrapper">
                     <div @click="changeProgress" ref="progressBar" class="progress_bar">
@@ -36,16 +29,6 @@
                     </div>
                     <div @click.stop="stopPass" @mousedown.stop="drag($event, 'progressPos')" :style="{left: progressPos.btn + 'px'}" class="progress-btn">
                     </div>
-                </div>
-            </div>
-            <div class="controller-wrapper">
-                <div class="left">
-                    <span class="bg-icon"><i class="fa fa-heart" aria-hidden="true"></i></span>
-                    <span class="bg-icon"><i class="fa fa-trash-o" aria-hidden="true"></i></span>
-                </div>
-                <div class="right">
-                    <span class="bg-icon" @click="switchState"><i :class="controlClass" aria-hidden="true"></i></span>
-                    <span @click="nextSong()" class="bg-icon"><i class="fa fa-step-forward" aria-hidden="true"></i></span>
                 </div>
             </div>
         </div>
@@ -99,6 +82,8 @@ export default {
             }],
             index: 0, // 当前播放的歌曲index
             defaultCover: 'http://s4.music.126.net/style/web2/img/default/default_album.jpg', // 默认专辑封面url
+            urlSearch: 'https://route.showapi.com/213-1?showapi_appid=26601&showapi_sign=adc05e2062a5402b81c563a3ced09208&keyword=',
+            urlDetail: 'https://route.showapi.com/213-2?showapi_appid=26601&showapi_sign=adc05e2062a5402b81c563a3ced09208&musicid=',
             cover: '', // 当前歌曲专辑url
             play: false, // 歌曲的播放状态
             volPos: { // 音量条的最大位置和当前位置,单位像素
@@ -293,6 +278,10 @@ export default {
     },
     created() {
         this.coverImage(); // 预加载头图
+        this.$http.get(this.urlSearch + '星际牛仔').then(response => {
+             response = response.data;
+             console.log(response);
+        });
     },
     computed: {
         controlClass() { // 播放&暂停键的样式切换
@@ -324,7 +313,7 @@ export default {
 }
 </script>
 <style lang="scss">
-$background: #FBFBFB;
+$lightYellow: #FBFBFB;
 $black: #696769;
 $dark: #828282;
 $grey: #C1C1C1;
@@ -332,22 +321,60 @@ $lightGrey: #E1E1E1;
 $darkGreen: #0AAA46;
 $green: #00C84B;
 $white: #FFF;
-.container {
-    display: flex;
+$iconUrl: 'https://y.gtimg.cn/mediastyle/yqq/img/player.png?max_age=2592000&v=749f8d7b865b29877500567512879e12';
+
+.player-container {
     width: 1000px;
-    height: 250px;
-    background: $background;
+    height: 115px;
     .left-content {
-        flex: 1;
-        padding: 30px 15px;
-        .title {
-            font-size: 26px;
-            color: $black;
-            margin-bottom: 10px;
+        display: inline-block;
+        text-align: center;
+        vertical-align: top;
+        width: 140px;
+        height: 100%;
+        line-height: 115px;
+        .bg-icon {
+            display: inline-block;
+            margin-right: 10px;
+            opacity: 0.8;
+            cursor: pointer;
+            background-image: url($iconUrl);
         }
-        .singer {
-            color: $dark;
+        .bg-icon:hover {
+            opacity: 1
+        }
+        .bg-icon.prev {
+            width: 19px;
+            height: 20px;
+            background-position: 0 -30px;
+        }
+        .bg-icon.play {
+            width: 21px;
+            height: 29px;
+            background-position: 0 0;
+        }
+        .bg-icon.next {
+            width: 19px;
+            height: 20px;
+            background-position: 0 -52px;
+        }
+    }
+    .center-content {
+        display: inline-block;
+        vertical-align: top;
+        width: 720px;
+        height: 100%;
+        .intro {
+            margin-top: 20px;
             font-size: 20px;
+            .title {
+            color: $black;
+            }
+            .singer {
+                margin-left: 10px;
+                color: $dark;
+                font-size: 20px;
+            }
         }
         .progress-wrapper {
             position: relative;
@@ -389,12 +416,7 @@ $white: #FFF;
                     border: 1px solid $green;
                 }
             }
-            .left,
-            .right {
-                display: inline-block;
-            }
             .left {
-                float: left;
                 display: flex;
                 width: 109px;
                 justify-content: space-between;
@@ -406,17 +428,6 @@ $white: #FFF;
                     width: 14px;
                     text-align: center;
                 }
-            }
-            .right {
-                float: right;
-                display: flex;
-                width: 157px;
-                justify-content: space-between;
-                font-size: 20px
-            }
-            .sm-icon:hover {
-                color: $dark;
-                cursor: pointer;
             }
             .progress_bar-wrapper {
                 position: absolute;
@@ -458,42 +469,22 @@ $white: #FFF;
                 }
             }
         }
-        .controller-wrapper {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 60px;
-            color: $black;
-            font-size: 26px;
-            line-height: 30px;
-            .left,
-            .right {
-                display: flex;
-                justify-content: space-between;
-            }
-            .left {
-                width: 85px;
-            }
-            .right {
-                width: 106px;
-            }
-            .bg-icon {
-                cursor: pointer;
-            }
-        }
     }
     .right-content {
-        display: flex;
-        width: 280px;
-        align-items: center;
+        display: inline-block;
+        width: 80px;
+        margin-left: 20px;
+        line-height: 115px;
         .cover {
-            width: 210px;
-            height: 210px;
+            display: inline-block;
+            vertical-align: middle;
+            width: 80px;
+            height: 80px;
             border-radius: 3px;
             overflow: hidden;
-            margin-left: 35px;
             .img {
-                width: 210px;
-                height: 210px;
+                width: 100%;
+                height: 100%;
             }
         }
     }
