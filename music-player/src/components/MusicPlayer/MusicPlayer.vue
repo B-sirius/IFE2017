@@ -1,22 +1,22 @@
 <template>
     <div class="player-container">
-        <audio ref="audio" :src="songList[index].location"></audio>
+        <audio ref="audio" :src="song.m4a"></audio>
         <div class="left-content">
             <span class="bg-icon prev"></span>
-            <span class="bg-icon play" @click="switchState"></span>
+            <span class="bg-icon" :class="controlClass" @click="switchState"></span>
             <span @click="nextSong()" class="bg-icon next"></span>
         </div>
         <div class="center-content">
             <div class="intro">
-                <span class="title">{{songList[index].title}}</span>
-                <span class="singer">{{songList[index].singer}}</span>
+                <span class="title">{{song.songname}}</span>
+                <span class="singer">{{song.singername}}</span>
             </div>
             <div class="progress-wrapper">
                 <div class="time">
                     <span class="currTime">{{getTime(currLen)}}</span>
                     <span class="totalTime"> / {{getTime(totalLen)}}</span>
                 </div>
-                <span class="volume-btn"></span>
+                <span class="volume-btn" :class="volumeClass"></span>
                 <div ref="bar" @click="changeVolPos" class="volume-bar">
                     <div :style="{width: volPos.btn + 'px'}" class="current-bar"></div>
                     <div ref="volumeController" @click.stop="stopPass" @mousedown.stop="drag($event, 'volPos')" :style="{left: volPos.btn + 'px'}" class="controller"></div>
@@ -39,55 +39,27 @@
 </template>
 <script>
 export default {
+    props: {
+        song: {
+            type: Object
+        }
+    },
+    watch: {
+        song: function() { // 歌曲改变时，要将清除原先的定时器
+            clearInterval(this.intervalId);
+        }
+    },
     data() {
             return {
-                songList: [{ // 歌曲列表
-                    'album': 'STEINS;GATE Original Soundtrack+Radio CD(仮)',
-                    'album_pic': 'http://img.xiami.net/images/album/img74/94174/4371591424151634_2.jpg',
-                    'singer': '阿保剛',
-                    'album_pic_m': 'http://img.xiami.net/images/album/img74/94174/4371591424151634_1.jpg',
-                    'lyric': '',
-                    'location': 'http://om5.alicdn.com/174/94174/437159/1770163789_2249535_l.mp3?auth_key=fb4327a6903bc75200e99170dac12f10-1490151600-0-null',
-                    'title': 'GATE OF STEINER -Piano-',
-                    'album_pic_l': 'http://img.xiami.net/images/album/img74/94174/4371591424151634.jpg'
-                }, {
-                    'album': 'Brit Awards 2015',
-                    'album_pic': 'http://img.xiami.net/images/album/img58/23258/2250921901425092190_2.jpg',
-                    'singer': 'First Aid Kit',
-                    'album_pic_m': 'http://img.xiami.net/images/album/img58/23258/2250921901425092190_1.jpg',
-                    'lyric': '',
-                    'location': 'http://om5.alicdn.com/258/23258/225092190/1774024646_16366085_l.mp3?auth_key=30b7aec140d489a6194f12cc12b10cc8-1490151600-0-null',
-                    'title': 'My Silver Lining',
-                    'album_pic_l': 'http://img.xiami.net/images/album/img58/23258/2250921901425092190.jpg'
-                }, {
-                    'album': '蔡琴经典(壹)',
-                    'album_pic': 'http://img.xiami.net/images/album/img48/1348/69421384850954_2.jpg',
-                    'singer': '蔡琴',
-                    'album_pic_m': 'http://img.xiami.net/images/album/img48/1348/69421384850954_1.jpg',
-                    'lyric': '',
-                    'location': 'http://om5.alicdn.com/348/1348/6942/84764_2113348_l.mp3?auth_key=d4d61a2ce447efc110e8104c2bbe2c2f-1490151600-0-null',
-                    'title': '被遗忘的时光',
-                    'album_pic_l': 'http://img.xiami.net/images/album/img48/1348/69421384850954.jpg'
-                }, {
-                    'album': 'WHITE ALBUM2 ORIGINAL SOUNDTRACK～kazusa～',
-                    'album_pic': 'http://img.xiami.net/images/album/img24/176/58b3d5fc6e425_8832024_1488180732_2.jpg',
-                    'singer': '生天目仁美',
-                    'album_pic_m': 'http://img.xiami.net/images/album/img24/176/58b3d5fc6e425_8832024_1488180732_1.jpg',
-                    'lyric': '',
-                    'location': 'http://om5.alicdn.com/826/75826/2102674458/1795430948_1483092419161.mp3?auth_key=f8d5c0d6594170569545ab09b865dab7-1489892400-0-null',
-                    'title': 'WHITE ALBUM',
-                    'album_pic_l': 'http://img.xiami.net/images/album/img24/176/58b3d5fc6e425_8832024_1488180732.jpg'
-                }],
-                index: 0, // 当前播放的歌曲index
                 defaultCover: 'http://s4.music.126.net/style/web2/img/default/default_album.jpg', // 默认专辑封面url
-                cover: '', // 当前歌曲专辑url
+                cover: 'http://s4.music.126.net/style/web2/img/default/default_album.jpg', // 当前歌曲专辑url
                 play: false, // 歌曲的播放状态
                 volPos: { // 音量条的最大位置和当前位置,单位像素
                     max: 80,
                     btn: 80
                 },
                 progressPos: { // 进度条的最大位置和当前位置,单位像素
-                    max: 690,
+                    max: 0,
                     btn: 0
                 },
                 posData: { // 记录拖拽发生时的相关数据
@@ -105,13 +77,14 @@ export default {
                 let _self = this;
                 this.cover = this.defaultCover;
                 let img = new Image();
-                img.src = this.songList[this.index].album_pic;
+                img.src = this.song.albumpic_small;
                 img.onload = function() {
                     _self.cover = img.src;
                 };
             },
             switchState() { // 切换播放与暂停
                 this.play = !this.play; // 改变状态
+                this.$emit('switchState', this.play);
 
                 if (this.play) {
                     this.$refs.audio.play();
@@ -243,8 +216,9 @@ export default {
                     if (this.play) { // 是否播放音乐
                         this.$refs.audio.play();
                     }
+                    this.coverImage(); // 预加载头图
+                    this.setProgress();
                 });
-                this.setProgress();
             },
             getTime(seconds) { // 将秒coverImage转换为 01:13 的格式
                 let m = Math.floor(seconds / 60);
@@ -263,23 +237,14 @@ export default {
                 this.currLen = this.$refs.audio.currentTime;
             },
             nextSong() { // 切换到下一首歌曲
-                if (this.index === this.songList.length - 1) {
-                    this.index = 0;
-                } else {
-                    ++this.index;
-                }
-
-                this.coverImage();
+                this.$emit('nextSong');
             }
-        },
-        created() {
-            this.coverImage(); // 预加载头图
         },
         computed: {
             controlClass() { // 播放&暂停键的样式切换
                 const className = {
-                    play: 'fa fa-play',
-                    pause: 'fa fa-pause'
+                    play: 'play',
+                    pause: 'pause'
                 };
 
                 if (this.play) {
@@ -289,8 +254,8 @@ export default {
             },
             volumeClass() { // 静音&开启声音的样式切换
                 const className = {
-                    volumeOff: 'fa fa-volume-off',
-                    volumeOn: 'fa fa-volume-up'
+                    volumeOff: 'volume-off',
+                    volumeOn: 'volume-on'
                 };
 
                 if (this.volPos.btn === 0) {
@@ -301,6 +266,7 @@ export default {
         },
         mounted: function() {
             this.initMusic(); // 初始化音乐信息
+            this.progressPos.max = this.$refs.progressBar.clientWidth;
         }
 }
 </script>
@@ -311,7 +277,7 @@ $currentProgressColor: rgba(225, 225, 225, .7);
 $volumeColor: rgba(225, 225, 225, .1);
 $currentVolumeColor: rgba(225, 225, 225, .7);
 $btnColor: rgba(225, 225, 225, .9);
-$iconUrl: 'https://y.gtimg.cn/mediastyle/yqq/img/player.png?max_age=2592000&v=749f8d7b865b29877500567512879e12';
+$icon: 'https://y.gtimg.cn/mediastyle/yqq/img/player.png?max_age=2592000&v=749f8d7b865b29877500567512879e12';
 .player-container {
     width: 1100px;
     height: 115px;
@@ -328,7 +294,7 @@ $iconUrl: 'https://y.gtimg.cn/mediastyle/yqq/img/player.png?max_age=2592000&v=74
             display: inline-block;
             opacity: 0.8;
             cursor: pointer;
-            background-image: url($iconUrl);
+            background-image: url($icon);
         }
         .bg-icon:hover {
             opacity: 1
@@ -344,6 +310,12 @@ $iconUrl: 'https://y.gtimg.cn/mediastyle/yqq/img/player.png?max_age=2592000&v=74
             height: 29px;
             margin-right: 60px;
             background-position: 0 0;
+        }
+        .bg-icon.pause {
+            width: 21px;
+            height: 29px;
+            margin-right: 60px;
+            background-position: -30px 0;
         }
         .bg-icon.next {
             width: 19px;
@@ -385,9 +357,14 @@ $iconUrl: 'https://y.gtimg.cn/mediastyle/yqq/img/player.png?max_age=2592000&v=74
                 height: 21px;
                 margin-top: 1px;
                 margin-left: 16px;
-                background: url($iconUrl);
-                background-position: 0 -144px;
+                background: url($icon);
                 opacity: 0.8;
+            }
+            .volume-on {
+                background-position: 0 -144px;
+            }
+            .volume-off {
+                background-position: 0 -182px;
             }
             .volume-btn:hover {
                 opacity: 1;

@@ -1,14 +1,14 @@
 <template>
     <div class="app" id="app">
-        <div class="backImg"></div>
+        <div :style="backgroundObj" class="backImg"></div>
         <div class="mask"></div>
         <div class="main-content">
             <div id="listWrapper" class="list-wrapper">
-                <MusicList :songData="songData" @initScroll="initScroll()"></MusicList>
+                <MusicList :songData="songData" :currentSong="currentSong" :playing="playing" :currIndex="index" :page="page" :allPages="allPages" @initScroll="initScroll" @changeSong="changeSong"></MusicList>
             </div>
         </div>
         <div class="player-wrapper">
-            <MusicPlayer></MusicPlayer>
+            <MusicPlayer :song="currentSong" @nextSong="nextSong" @switchState="switchState"></MusicPlayer>
         </div>
     </div>
 </template>
@@ -27,25 +27,63 @@ export default {
         return {
             urlSearch: 'https://route.showapi.com/213-1?showapi_appid=26601&showapi_sign=adc05e2062a5402b81c563a3ced09208&keyword=',
             urlDetail: 'https://route.showapi.com/213-2?showapi_appid=26601&showapi_sign=adc05e2062a5402b81c563a3ced09208&musicid=',
+            searchText: '星际牛仔',
             songData: {},
+            currentSong: {},
             page: 1,
-            allPages: 0
+            allPages: 0,
+            index: 0,
+            playing: false,
+            listScroll: null
         }
     },
     methods: {
         defaultList() {
-            this.search('星际牛仔');
+            this.$http.get(this.urlSearch + this.searchText + '&page=' + this.page).then(response => {
+                this.songData = response.body.showapi_res_body.pagebean;
+
+                this.allPages = this.songData.allPages;
+                this.currentSong = this.songData.contentlist[this.index];
+            });
         },
-        search(text) {
-            this.$http.get(this.urlSearch + text + '&page=' + this.page).then(response => {
+        search() {
+            this.$http.get(this.urlSearch + this.searchText + '&page=' + this.page).then(response => {
                 this.songData = response.body.showapi_res_body.pagebean;
             });
         },
-        initScroll() {
-            let listScroll = new IScroll('#listWrapper', {
-                mouseWheel: true,
-                scrollbars: 'custom'
-            });
+        initScroll() { // 初始化列表滚动条
+            if (this.listScroll === null) {
+                this.listScroll = new IScroll('#listWrapper', {
+                    mouseWheel: true,
+                    scrollbars: 'custom',
+                    bounce: false,
+                    disableMouse: true,
+                    disablePointer: true,
+                    interactiveScrollbars: true
+                });
+            }
+        },
+        changeSong(index) { // 点击列表触发换歌
+            if (this.songData.contentlist[index] === this.currentSong.songid) { // 如果是同一首歌，则不操作
+                return;
+            }
+
+            this.index = index;
+
+            this.currentSong = this.songData.contentlist[index];
+        },
+        nextSong() {
+            this.currentSong = this.songData.contentlist[++this.index];
+        },
+        switchState(play) {
+            this.playing = play;
+        }
+    },
+    computed: {
+        backgroundObj() {
+            return {
+                backgroundImage: `url(${this.currentSong.albumpic_big})`
+            }
         }
     },
     created() {
@@ -54,7 +92,7 @@ export default {
 }
 </script>
 <style lang="scss">
-$bodyBack: #292a2b;
+$bodyBack: #42474C;
 $maskBack: rgba(0, 0, 0, .35);
 $scrollColor: rgba(255, 255, 255, .1);
 $scrollWrapperColor: rgba(255, 255, 255, .1);
@@ -67,10 +105,9 @@ html {
         position: absolute;
         z-index: 9999;
         width: 7px;
-        bottom: 2px;
-        top: 2px;
-        left: 730px;
-        overflow: hidden;
+        bottom: 10px;
+        top: 10px;
+        right: 0px;
         pointer-events: none;
         background: $scrollWrapperColor;
         .iScrollIndicator {
@@ -91,7 +128,7 @@ html {
             position: absolute;
             width: 100%;
             height: 100%;
-            background: url('http://img.xiami.net/images/album/img74/94174/4371591424151634_2.jpg') no-repeat;
+            background-repeat: no-repeat;
             background-position: 50%;
             background-size: cover;
             filter: blur(90px);
@@ -112,7 +149,9 @@ html {
             width: 1100px;
             margin: auto;
             .list-wrapper {
+                position: relative;
                 display: inline-block;
+                padding-right: 25px;
                 width: 700px;
                 height: 100%;
                 overflow: hidden;
