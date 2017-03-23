@@ -28,6 +28,7 @@ module.exports = {
     'indent': 0,
     'semi': 0,
     'no-unused-vars': 0,
-    'no-undef': 0
+    'no-undef': 0,
+    'no-cond-assign': 0
   }
 }

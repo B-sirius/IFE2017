@@ -4,11 +4,11 @@
         <div class="mask"></div>
         <div class="main-content">
             <div id="listWrapper" class="list-wrapper">
-                <MusicList :songData="songData" :currentSong="currentSong" :playing="playing" :currIndex="index" :page="page" :allPages="allPages" @initScroll="initScroll" @changeSong="changeSong"></MusicList>
+                <MusicList :songList="songList" :currentSong="currentSong" :playing="playing" :currIndex="index" :page="page" :allPages="allPages" @initScroll="initScroll" @playControl="playControl" @loadMore="loadMore"></MusicList>
             </div>
         </div>
         <div class="player-wrapper">
-            <MusicPlayer :song="currentSong" @nextSong="nextSong" @switchState="switchState"></MusicPlayer>
+            <MusicPlayer ref="player" :playing="playing" :song="currentSong" @nextSong="nextSong" @switchState="switchState"></MusicPlayer>
         </div>
     </div>
 </template>
@@ -16,6 +16,7 @@
 import MusicPlayer from 'components/MusicPlayer/MusicPlayer';
 import MusicList from 'components/MusicList/MusicList';
 import IScroll from 'iscroll';
+import 'rgbaster.js';
 
 export default {
     name: 'app',
@@ -25,58 +26,87 @@ export default {
     },
     data() {
         return {
-            urlSearch: 'https://route.showapi.com/213-1?showapi_appid=26601&showapi_sign=adc05e2062a5402b81c563a3ced09208&keyword=',
-            urlDetail: 'https://route.showapi.com/213-2?showapi_appid=26601&showapi_sign=adc05e2062a5402b81c563a3ced09208&musicid=',
-            searchText: '星际牛仔',
-            songData: {},
-            currentSong: {},
-            page: 1,
-            allPages: 0,
-            index: 0,
-            playing: false,
-            listScroll: null
+            urlSearch: 'https://route.showapi.com/213-1?showapi_appid=26601&showapi_sign=adc05e2062a5402b81c563a3ced09208&keyword=', // 关键词搜索
+            urlDetail: 'https://route.showapi.com/213-2?showapi_appid=26601&showapi_sign=adc05e2062a5402b81c563a3ced09208&musicid=', // 歌曲id搜索
+            searchText: '星际牛仔', // 记录上次搜索的关键词
+            songList: [], // 目前的歌曲列表
+            currentSong: {}, // 当前播放歌曲
+            index: 0, // 当前播放歌曲序号
+            page: 1, // 当前搜索页
+            allPages: 1, // 总搜索页
+            playing: false, // 是否正在播放
+            listScroll: null, // 列表滚动条
+            scrollPos: 0 // 滚动条位置信息
         }
     },
     methods: {
-        defaultList() {
-            this.$http.get(this.urlSearch + this.searchText + '&page=' + this.page).then(response => {
-                this.songData = response.body.showapi_res_body.pagebean;
-
-                this.allPages = this.songData.allPages;
-                this.currentSong = this.songData.contentlist[this.index];
+        default() {  // 初始化设置
+            this.search((data) => {
+                this.updateSongData(data);
+                this.currentSong = this.songList[this.index];
+                this.$nextTick(() => {
+                    this.initScroll();
+                });
             });
         },
-        search() {
+        search(callback) {  // 进行搜索
+            let self = this;
             this.$http.get(this.urlSearch + this.searchText + '&page=' + this.page).then(response => {
-                this.songData = response.body.showapi_res_body.pagebean;
+                let data = response.body.showapi_res_body.pagebean;
+                callback.call(self, data);
             });
+        },
+        updateSongData(data) { // 更新歌曲列表
+            this.page = data.currentPage;
+            this.allPages = data.allPages;
+            this.songList = this.songList.concat(data.contentlist);
         },
         initScroll() { // 初始化列表滚动条
             if (this.listScroll === null) {
                 this.listScroll = new IScroll('#listWrapper', {
                     mouseWheel: true,
                     scrollbars: 'custom',
-                    bounce: false,
-                    disableMouse: true,
-                    disablePointer: true,
-                    interactiveScrollbars: true
+                    startY: this.scrollPos
                 });
             }
         },
-        changeSong(index) { // 点击列表触发换歌
-            if (this.songData.contentlist[index] === this.currentSong.songid) { // 如果是同一首歌，则不操作
+        reInitScroll() { // 重新初始化滚动条
+            this.scrollPos = this.listScroll.y;
+            if (this.listScroll !== null) {
+                this.listScroll.destroy();
+                this.listScroll = null;
+            }
+            this.initScroll();
+        },
+        playControl(index) { // 点击列表触发换歌
+            if (this.songList[index].songid === this.currentSong.songid) { // 如果是同一首歌，则进行播放&暂停切换
+                this.switchState();
                 return;
             }
-
+            // 不是同一首歌，直接播放
             this.index = index;
 
-            this.currentSong = this.songData.contentlist[index];
+            this.playing = true;
+            this.currentSong = this.songList[index];
         },
         nextSong() {
-            this.currentSong = this.songData.contentlist[++this.index];
+            this.currentSong = this.songList[++this.index];
         },
-        switchState(play) {
-            this.playing = play;
+        switchState() { // 改变播放状态
+            this.playing = !this.playing;
+        },
+        loadMore() { // 加载更多歌曲
+            if (this.page >= this.allPages) {
+                return;
+            }
+            ++this.page;
+
+            this.search((data) => {
+                this.updateSongData(data);
+                this.$nextTick(() => {
+                    this.reInitScroll();
+                });
+            });
         }
     },
     computed: {
@@ -87,7 +117,7 @@ export default {
         }
     },
     created() {
-        this.defaultList();
+        this.default();
     }
 }
 </script>
