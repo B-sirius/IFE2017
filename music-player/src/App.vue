@@ -4,11 +4,11 @@
         <div class="mask"></div>
         <div class="main-content">
             <div id="listWrapper" class="list-wrapper">
-                <MusicList :songList="songList" :currentSong="currentSong" :playing="playing" :currIndex="index" :page="page" :allPages="allPages" @initScroll="initScroll" @playControl="playControl" @loadMore="loadMore"></MusicList>
+                <MusicList :songList="songList" :currentSong="currentSong" :playing="playing" :currIndex="index" :page="page" :allNum="allNum" :loading="listLoading" @initScroll="initScroll" @playControl="playControl" @loadMore="loadMore"></MusicList>
             </div>
         </div>
         <div class="player-wrapper">
-            <MusicPlayer ref="player" :playing="playing" :song="currentSong" @nextSong="nextSong" @switchState="switchState"></MusicPlayer>
+            <MusicPlayer ref="player" :playing="playing" :song="currentSong" @nextSong="nextSong" @prevSong="prevSong" @switchState="switchState"></MusicPlayer>
         </div>
     </div>
 </template>
@@ -30,13 +30,16 @@ export default {
             urlDetail: 'https://route.showapi.com/213-2?showapi_appid=26601&showapi_sign=adc05e2062a5402b81c563a3ced09208&musicid=', // 歌曲id搜索
             searchText: '星际牛仔', // 记录上次搜索的关键词
             songList: [], // 目前的歌曲列表
+            playedList: [], // 播放过的队列
             currentSong: {}, // 当前播放歌曲
             index: 0, // 当前播放歌曲序号
             page: 1, // 当前搜索页
-            allPages: 1, // 总搜索页
+            allNum: 1, // 当前关键词返回的所有歌曲数
             playing: false, // 是否正在播放
+            playMode: 'order', // 播放模式
             listScroll: null, // 列表滚动条
-            scrollPos: 0 // 滚动条位置信息
+            scrollPos: 0, // 滚动条位置信息
+            listLoading: false // 列表是否在加载状态
         }
     },
     methods: {
@@ -51,14 +54,16 @@ export default {
         },
         search(callback) {  // 进行搜索
             let self = this;
+            this.listLoading = true;
             this.$http.get(this.urlSearch + this.searchText + '&page=' + this.page).then(response => {
                 let data = response.body.showapi_res_body.pagebean;
                 callback.call(self, data);
             });
         },
         updateSongData(data) { // 更新歌曲列表
+            this.listLoading = false;
             this.page = data.currentPage;
-            this.allPages = data.allPages;
+            this.allNum = data.allNum;
             this.songList = this.songList.concat(data.contentlist);
         },
         initScroll() { // 初始化列表滚动条
@@ -78,25 +83,79 @@ export default {
             }
             this.initScroll();
         },
+        addPlayedList() { // 将歌曲添加到播放过的列表里
+            let data = {
+                song: this.currentSong,
+                index: this.index
+            };
+            this.playedList.push(data); // 将要被切换的歌曲信息压入playedList
+        },
         playControl(index) { // 点击列表触发换歌
             if (this.songList[index].songid === this.currentSong.songid) { // 如果是同一首歌，则进行播放&暂停切换
                 this.switchState();
                 return;
             }
-            // 不是同一首歌，直接播放
+
+            this.addPlayedList();
+
             this.index = index;
 
             this.playing = true;
+
             this.currentSong = this.songList[index];
         },
+        prevSong() {
+            if (this.playedList.length !== 0) {
+                let data = this.playedList.pop();
+                this.currentSong = data.song;
+                this.index = data.index;
+
+                return;
+            }
+            this.prevHandler();
+        },
         nextSong() {
-            this.currentSong = this.songList[++this.index];
+            this.addPlayedList();
+
+            this.nextHandler();
+        },
+        prevHandler() {
+            let self = this;
+
+            let t = {
+                'order': function() {
+                    if (this.index === 0) {
+                        this.index = this.songList.length - 1;
+                    } else {
+                        --this.index;
+                    }
+                    this.currentSong = this.songList[this.index];
+                }
+            };
+
+            t[this.playMode].call(self);
+        },
+        nextHandler() {
+            let self = this;
+
+            let t = {
+                'order': function() {
+                    if (this.index === this.songList.length - 1) {
+                        this.index = 0;
+                    } else {
+                        ++this.index;
+                    }
+                    this.currentSong = this.songList[this.index];
+                }
+            }
+
+            t[this.playMode].call(self);
         },
         switchState() { // 改变播放状态
             this.playing = !this.playing;
         },
         loadMore() { // 加载更多歌曲
-            if (this.page >= this.allPages) {
+            if (this.songList.length >= this.allNum) {
                 return;
             }
             ++this.page;

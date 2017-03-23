@@ -2,7 +2,7 @@
     <div class="player-container">
         <audio ref="audio" :src="song.m4a"></audio>
         <div class="left-content">
-            <span class="bg-icon prev"></span>
+            <span @click="prevSong()" class="bg-icon prev"></span>
             <span class="bg-icon" :class="controlClass" @click="switchState"></span>
             <span @click="nextSong()" class="bg-icon next"></span>
         </div>
@@ -239,6 +239,9 @@ export default {
             let length = e.offsetX;
             this.$refs.audio.currentTime = ((length / this.$refs.progressBar.clientWidth) * this.totalLen).toFixed(2);
             this.currLen = this.$refs.audio.currentTime;
+        },
+        prevSong() { // 回到上一首歌曲
+            this.$emit('prevSong');
         },
         nextSong() { // 切换到下一首歌曲
             this.$emit('nextSong');

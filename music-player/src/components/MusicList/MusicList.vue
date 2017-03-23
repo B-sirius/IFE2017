@@ -33,7 +33,8 @@
                     <span>{{song.albumname}}</span>
                 </div>
             </li>
-            <li v-show="morePages" class="item text-center" @click="loadMore">加载更多</li>
+            <li v-show="loading" class="item text-center loading">加载中...</li>
+            <li v-show="morePages" class="item text-center load-more" @click="loadMore">加载更多</li>
         </ul>
     </div>
 </template>
@@ -49,13 +50,16 @@ export default {
         playing: {
             type: Boolean
         },
+        loading: {
+            type: Boolean
+        },
         currIndex: {
             type: Number
         },
         page: {
             type: Number
         },
-        allPages: {
+        allNum: {
             type: Number
         }
     },
@@ -77,13 +81,13 @@ export default {
     },
     computed: {
         morePages: function() {
-            if (this.page < this.allPages) {
+            if (this.songList.length < this.allNum && !this.loading) {
                 return true;
             }
             return false;
         },
         noData: function() {
-            if (this.allPages === 0) {
+            if (this.allNum === 0) {
                 return true;
             }
         }
@@ -125,6 +129,9 @@ $icon: 'https://y.gtimg.cn/mediastyle/yqq/img/icon_list_menu.png?max_age=2592000
             }
             &.text-center {
                 text-align: center;
+            }
+            &.load-more {
+                cursor: pointer;
             }
             &:hover {
                 background: $hoverColor;
