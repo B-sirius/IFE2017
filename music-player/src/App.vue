@@ -3,6 +3,14 @@
         <div :style="backgroundObj" class="backImg"></div>
         <div class="mask"></div>
         <div class="main-content">
+            <div class="search-container">
+                <div class="search-wrapper">
+                    <input type="text" class="search" placeholder="搜索关键字">
+                    <button class="search-btn">
+                        <i class="search-icon"></i>
+                    </button>
+                </div>
+            </div>
             <div id="listWrapper" class="list-wrapper">
                 <MusicList :songList="songList" :currentSong="currentSong" :playing="playing" :currIndex="index" :page="page" :allNum="allNum" :loading="listLoading" @initScroll="initScroll" @playControl="playControl" @loadMore="loadMore"></MusicList>
             </div>
@@ -185,6 +193,11 @@ $bodyBack: #42474C;
 $maskBack: rgba(0, 0, 0, .35);
 $scrollColor: rgba(255, 255, 255, .1);
 $scrollWrapperColor: rgba(255, 255, 255, .1);
+$searchColor: rgba(255, 255, 255, .07);
+$searchBtnHoverColor: rgba(255, 255, 255, .1);
+$textColor: rgba(225, 225, 225, .8);
+$icon: 'https://y.gtimg.cn/mediastyle/yqq/img/icon_sprite.png?max_age=2592000&v=cfc9e963685e5ce3f9fcef4a4449cddb';
+
 body,
 html {
     height: 100%;
@@ -231,12 +244,61 @@ html {
         }
         .main-content {
             position: absolute;
-            top: 100px;
-            bottom: 155px;
+            top: 80px;
+            bottom: 165px;
             left: 0;
             right: 0;
+            padding-top: 100px;
             width: 1100px;
             margin: auto;
+            .search-container {
+                position: absolute;
+                width: 100%;
+                margin-top: -100px;
+                text-align: center;
+                height: 70px;
+                .search-wrapper {
+                    position: relative;
+                    display: inline-block;
+                    box-sizing: border-box;
+                    height: 50px;
+                    width: 700px; 
+                    padding-left: 10px;
+                    padding-right: 50px;
+                    background: $searchColor;
+                    transition: 0.15s;
+                    .search {
+                        width: 100%;
+                        height: 100%;
+                        color: $textColor;
+                        font-size: 16px;
+                        background: transparent;
+                        border: none;
+                        outline: none;
+                    }
+                    .search-btn {
+                        position: absolute;
+                        top: 0;
+                        right: 0;
+                        width: 50px;
+                        height: 50px;
+                        background: transparent;
+                        border: none;
+                        padding: 0;
+                        cursor: pointer;
+                        &:hover {
+                            background: $searchBtnHoverColor;
+                        }
+                        .search-icon {
+                            display: inline-block;
+                            width: 16px;
+                            height: 16px;
+                            background: url($icon);
+                            background-position: 0 -40px;
+                        }
+                    }
+                }
+            }
             .list-wrapper {
                 position: relative;
                 display: inline-block;
