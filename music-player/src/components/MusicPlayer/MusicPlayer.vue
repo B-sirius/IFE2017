@@ -21,6 +21,7 @@
                     <div :style="{width: volPos.btn + 'px'}" class="current-bar"></div>
                     <div ref="volumeController" @click.stop="stopPass" @mousedown.stop="drag($event, 'volPos')" :style="{left: volPos.btn + 'px'}" class="controller"></div>
                 </div>
+                <span class="play_mod-icon" :class="play_modClass" @click="changeMode"></span>
                 <div class="progress_bar-wrapper">
                     <div @click="changeProgress" ref="progressBar" class="progress_bar">
                         <div :style="{width: progressPos.btn + 'px'}" class="current-progress"></div>
@@ -45,6 +46,9 @@ export default {
         },
         playing: {
             type: Boolean
+        },
+        playMode: {
+            type: String
         }
     },
     watch: {
@@ -199,7 +203,7 @@ export default {
             this.intervalId = setInterval(() => {
                 if (this.$refs.audio.ended) { // 如果播放结束,切换到下首歌
                     this.currLen = 0; // 防止进度条溢出
-                    this.nextSong();
+                    this.autoNextSong();
                     return;
                 }
 
@@ -243,8 +247,27 @@ export default {
         prevSong() { // 回到上一首歌曲
             this.$emit('prevSong');
         },
+        autoNextSong() {
+            let t = {
+                order: function() {
+                    this.nextSong();
+                },
+                random: function() {
+                    this.nextSong();
+                },
+                cycle: function() { // 如果是单曲循环模式，则直接循环
+                    this.$refs.audio.currentTime = 0;
+                    this.$refs.audio.play();
+                }
+            }
+
+            t[this.playMode].call(this);
+        },
         nextSong() { // 切换到下一首歌曲
             this.$emit('nextSong');
+        },
+        changeMode() {
+            this.$emit('changeMode');
         }
     },
     computed: {
@@ -269,6 +292,15 @@ export default {
                 return className['volumeOff'];
             }
             return className['volumeOn'];
+        },
+        play_modClass() {
+             const className = {
+                order: 'order',
+                random: 'random',
+                cycle: 'cycle'
+             };
+
+             return className[this.playMode];
         }
     },
     mounted: function() {
@@ -403,6 +435,34 @@ $icon: 'https://y.gtimg.cn/mediastyle/yqq/img/player.png?max_age=2592000&v=749f8
                     border-radius: 50%;
                     cursor: pointer;
                 }
+            }
+            .play_mod-icon {
+                position: absolute;
+                display: inline-block;
+                right: 0;
+                top: 0;
+                
+                background: url($icon);
+                opacity: 0.8;
+                cursor: pointer;
+                &.order {
+                    width: 26px;
+                    height: 25px;
+                    background-position: 0 -205px;
+                }
+                &.random {
+                    width: 25px;
+                    height: 19px;
+                    background-position: 0 -74px;
+                }
+                &.cycle {
+                    width: 26px;
+                    height: 25px;
+                    background-position: 0 -232px;
+                }
+            }
+            .play_mod-icon:hover {
+                opacity: 1;
             }
             .progress_bar-wrapper {
                 position: absolute;

@@ -16,7 +16,7 @@
             </div>
         </div>
         <div class="player-wrapper">
-            <MusicPlayer ref="player" :playing="playing" :song="currentSong" @nextSong="nextSong" @prevSong="prevSong" @switchState="switchState"></MusicPlayer>
+            <MusicPlayer ref="player" :playMode="playMode" :playing="playing" :song="currentSong" @nextSong="nextSong" @prevSong="prevSong" @switchState="switchState" @changeMode="changeMode"></MusicPlayer>
         </div>
     </div>
 </template>
@@ -186,8 +186,6 @@ export default {
             this.nextHandler();
         },
         prevHandler() {
-            let self = this;
-
             let t = {
                 'order': function() {
                     if (this.index === 0) {
@@ -195,15 +193,24 @@ export default {
                     } else {
                         --this.index;
                     }
-                    this.currentSong = this.songList[this.index];
+                },
+                'random': function() {
+                    this.index = Math.floor((this.songList.length) * Math.random());
+                },
+                'cycle': function() {
+                    if (this.index === 0) {
+                        this.index = this.songList.length - 1;
+                    } else {
+                        --this.index;
+                    }
                 }
             };
 
-            t[this.playMode].call(self);
+            t[this.playMode].call(this);
+
+            this.currentSong = this.songList[this.index];
         },
         nextHandler() {
-            let self = this;
-
             let t = {
                 'order': function() {
                     if (this.index === this.songList.length - 1) {
@@ -211,14 +218,34 @@ export default {
                     } else {
                         ++this.index;
                     }
-                    this.currentSong = this.songList[this.index];
+                },
+                'random': function() {
+                    this.index = Math.floor((this.songList.length) * Math.random());
+                },
+                'cycle': function() {
+                    if (this.index === this.songList.length - 1) {
+                        this.index = 0;
+                    } else {
+                        ++this.index;
+                    }
                 }
             }
 
-            t[this.playMode].call(self);
+            t[this.playMode].call(this);
+
+            this.currentSong = this.songList[this.index];
         },
         switchState() { // 改变播放状态
             this.playing = !this.playing;
+        },
+        changeMode() {
+            let nextMode = {
+                'order': 'random',
+                'random': 'cycle',
+                'cycle': 'order'
+            }
+
+            this.playMode = nextMode[this.playMode];
         }
     },
     computed: {
