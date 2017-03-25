@@ -5,8 +5,8 @@
         <div class="main-content">
             <div class="search-container">
                 <div class="search-wrapper">
-                    <input type="text" class="search" placeholder="搜索关键字">
-                    <button class="search-btn">
+                    <input ref="searchInput" type="text" class="search" placeholder="搜索关键字">
+                    <button class="search-btn" @click="searchKeyword">
                         <i class="search-icon"></i>
                     </button>
                 </div>
@@ -51,7 +51,7 @@ export default {
         }
     },
     methods: {
-        default() {  // 初始化设置
+        default () { // 初始化设置
             this.search((data) => {
                 this.updateSongData(data);
                 this.currentSong = this.songList[this.index];
@@ -60,13 +60,60 @@ export default {
                 });
             });
         },
-        search(callback) {  // 进行搜索
+        resetList() {
+            this.page = 1; // 初始化搜索页
+            this.index = 0; // 初始化序号
+            this.playedList = []; // 初始化播放过的歌曲
+        },
+        searchKeyword() { // 通过关键词搜索歌曲
+            let text = this.$refs.searchInput.value;
+            let array = text.split(' ');
+            text = '';
+            for (let i = 0; i < array.length; i++) {
+                if (array[i] === '') {
+                    array.splice(i, 1);
+                    --i;
+                    continue;
+                }
+                text += array[i] + '+';
+            }
+            this.searchText = text;
+
+            this.search((data) => {
+                this.resetSongData(data);
+                this.resetList();
+                this.currentSong = this.songList[this.index];
+                this.$nextTick(() => {
+                    this.reInitScroll();
+                });
+            });
+        },
+        loadMore() { // 加载更多歌曲
+            if (this.songList.length >= this.allNum) {
+                return;
+            }
+            ++this.page;
+
+            this.search((data) => {
+                this.updateSongData(data);
+                this.$nextTick(() => {
+                    this.reInitScroll();
+                });
+            });
+        },
+        search(callback) { // 进行搜索
             let self = this;
             this.listLoading = true;
             this.$http.get(this.urlSearch + this.searchText + '&page=' + this.page).then(response => {
                 let data = response.body.showapi_res_body.pagebean;
                 callback.call(self, data);
             });
+        },
+        resetSongData(data) {
+            this.listLoading = false;
+            this.page = data.currentPage;
+            this.allNum = data.allNum;
+            this.songList = data.contentlist;
         },
         updateSongData(data) { // 更新歌曲列表
             this.listLoading = false;
@@ -161,19 +208,6 @@ export default {
         },
         switchState() { // 改变播放状态
             this.playing = !this.playing;
-        },
-        loadMore() { // 加载更多歌曲
-            if (this.songList.length >= this.allNum) {
-                return;
-            }
-            ++this.page;
-
-            this.search((data) => {
-                this.updateSongData(data);
-                this.$nextTick(() => {
-                    this.reInitScroll();
-                });
-            });
         }
     },
     computed: {
@@ -197,7 +231,6 @@ $searchColor: rgba(255, 255, 255, .07);
 $searchBtnHoverColor: rgba(255, 255, 255, .1);
 $textColor: rgba(225, 225, 225, .8);
 $icon: 'https://y.gtimg.cn/mediastyle/yqq/img/icon_sprite.png?max_age=2592000&v=cfc9e963685e5ce3f9fcef4a4449cddb';
-
 body,
 html {
     height: 100%;
@@ -262,7 +295,7 @@ html {
                     display: inline-block;
                     box-sizing: border-box;
                     height: 50px;
-                    width: 700px; 
+                    width: 700px;
                     padding-left: 10px;
                     padding-right: 50px;
                     background: $searchColor;
@@ -286,6 +319,7 @@ html {
                         border: none;
                         padding: 0;
                         cursor: pointer;
+                        outline: none;
                         &:hover {
                             background: $searchBtnHoverColor;
                         }
