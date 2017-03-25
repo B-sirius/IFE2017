@@ -5,7 +5,7 @@
         <div class="main-content">
             <div class="search-container">
                 <div class="search-wrapper">
-                    <input ref="searchInput" type="text" class="search" placeholder="搜索关键字">
+                    <input ref="searchInput" type="text" class="search" placeholder="搜索关键字" @keyup="handleInput">
                     <button class="search-btn" @click="searchKeyword">
                         <i class="search-icon"></i>
                     </button>
@@ -65,8 +65,19 @@ export default {
             this.index = 0; // 初始化序号
             this.playedList = []; // 初始化播放过的歌曲
         },
+        handleInput(e) {
+            if (e.keyCode === 13) {
+                this.searchKeyword();
+            }
+        },
         searchKeyword() { // 通过关键词搜索歌曲
+            this.songList = [];
+            this.listLoading = true;
+
             let text = this.$refs.searchInput.value;
+            if (text.trim() === '') { // 输入内容不能为空
+                return;
+            }
             let array = text.split(' ');
             text = '';
             for (let i = 0; i < array.length; i++) {
