@@ -31,11 +31,6 @@
                 </div>
             </div>
         </div>
-        <div class="right-content">
-            <div class="cover">
-                <img class="img" :src="cover">
-            </div>
-        </div>
     </div>
 </template>
 <script>
@@ -65,8 +60,6 @@ export default {
     },
     data() {
         return {
-            defaultCover: 'http://s4.music.126.net/style/web2/img/default/default_album.jpg', // 默认专辑封面url
-            cover: 'http://s4.music.126.net/style/web2/img/default/default_album.jpg', // 当前歌曲专辑url
             volPos: { // 音量条的最大位置和当前位置,单位像素
                 max: 80,
                 btn: 80
@@ -86,15 +79,6 @@ export default {
         };
     },
     methods: {
-        coverImage() { // 专辑封面预加载
-            let _self = this;
-            this.cover = this.defaultCover;
-            let img = new Image();
-            img.src = this.song.albumpic_small;
-            img.onload = function() {
-                _self.cover = img.src;
-            };
-        },
         switchState() { // 切换播放与暂停
             this.$emit('switchState');
             // this.$nextTick(() => {
@@ -220,11 +204,11 @@ export default {
         },
         initMusic() { // 初始化音乐
             this.$refs.audio.addEventListener('loadedmetadata', () => { // 要在这个事件触发之后才能获得音乐的相关数据
+                this.$emit('renderLyrics');
                 this.totalLen = this.$refs.audio.duration; // 设置音乐时长
                 if (this.playing) { // 是否播放音乐
                     this.$refs.audio.play();
                 }
-                this.coverImage(); // 预加载头图
                 this.setProgress();
             });
         },
@@ -498,17 +482,6 @@ $icon: 'https://y.gtimg.cn/mediastyle/yqq/img/player.png?max_age=2592000&v=749f8
         width: 90px;
         margin-left: 30px;
         line-height: 115px;
-        .cover {
-            display: inline-block;
-            vertical-align: middle;
-            width: 90px;
-            height: 90px;
-            overflow: hidden;
-            .img {
-                width: 100%;
-                height: 100%;
-            }
-        }
     }
 }
 </style>

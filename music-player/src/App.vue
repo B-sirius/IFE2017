@@ -14,15 +14,20 @@
             <div id="listWrapper" class="list-wrapper">
                 <MusicList :songList="songList" :currentSong="currentSong" :playing="playing" :currIndex="index" :page="page" :allNum="allNum" :loading="listLoading" @initScroll="initScroll" @playControl="playControl" @loadMore="loadMore"></MusicList>
             </div>
+            <div class="lyrics-wrapper">
+                <Lyrics ref="lyrics" :song="currentSong"></Lyrics>
+            </div>
         </div>
         <div class="player-wrapper">
-            <MusicPlayer ref="player" :playMode="playMode" :playing="playing" :song="currentSong" @nextSong="nextSong" @prevSong="prevSong" @switchState="switchState" @changeMode="changeMode"></MusicPlayer>
+            <MusicPlayer ref="player" :playMode="playMode" :playing="playing" :song="currentSong" @nextSong="nextSong" @prevSong="prevSong" @switchState="switchState" @changeMode="changeMode" @renderLyrics="renderLyrics"></MusicPlayer>
         </div>
     </div>
 </template>
 <script>
 import MusicPlayer from 'components/MusicPlayer/MusicPlayer';
 import MusicList from 'components/MusicList/MusicList';
+import Lyrics from 'components/Lyrics/Lyrics';
+
 import IScroll from 'iscroll';
 import 'rgbaster.js';
 
@@ -30,12 +35,12 @@ export default {
     name: 'app',
     components: {
         MusicPlayer,
-        MusicList
+        MusicList,
+        Lyrics
     },
     data() {
         return {
             urlSearch: 'https://route.showapi.com/213-1?showapi_appid=26601&showapi_sign=adc05e2062a5402b81c563a3ced09208&keyword=', // 关键词搜索
-            urlDetail: 'https://route.showapi.com/213-2?showapi_appid=26601&showapi_sign=adc05e2062a5402b81c563a3ced09208&musicid=', // 歌曲id搜索
             searchText: '星际牛仔', // 记录上次搜索的关键词
             songList: [], // 目前的歌曲列表
             playedList: [], // 播放过的队列
@@ -115,7 +120,7 @@ export default {
         search(callback) { // 进行搜索
             let self = this;
             this.listLoading = true;
-            this.$http.get(this.urlSearch + this.searchText + '&page=' + this.page).then(response => {
+            this.$http.get(this.urlSearch + this.searchText + '&page=' + this.page).then((response) => {
                 let data = response.body.showapi_res_body.pagebean;
                 callback.call(self, data);
             });
@@ -244,8 +249,10 @@ export default {
                 'random': 'cycle',
                 'cycle': 'order'
             }
-
             this.playMode = nextMode[this.playMode];
+        },
+        renderLyrics() {
+            this.$refs.lyrics.renderLyrics();
         }
     },
     computed: {
@@ -322,6 +329,7 @@ html {
             padding-top: 100px;
             width: 1100px;
             margin: auto;
+            font-size: 0;
             .search-container {
                 position: absolute;
                 width: 100%;
@@ -378,6 +386,12 @@ html {
                 width: 700px;
                 height: 100%;
                 overflow: hidden;
+            }
+            .lyrics-wrapper {
+                vertical-align: top;
+                width: 375px;
+                display: inline-block;
+                height: 100%;
             }
         }
         .player-wrapper {
