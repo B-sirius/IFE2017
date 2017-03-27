@@ -192,7 +192,10 @@ export default {
                 }
 
                 this.currLen = this.$refs.audio.currentTime; // 设置当前长度
+
                 this.progressPos.btn = parseFloat(((this.currLen / this.totalLen) * this.progressPos.max).toFixed(2));
+
+                this.$emit('checkLyric', this.currLen); // 检查歌词是否需要更新
             }, 300);
         },
         changeVolPos(e) { // 点击设置音量条位置

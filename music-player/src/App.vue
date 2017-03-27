@@ -19,7 +19,7 @@
             </div>
         </div>
         <div class="player-wrapper">
-            <MusicPlayer ref="player" :playMode="playMode" :playing="playing" :song="currentSong" @nextSong="nextSong" @prevSong="prevSong" @switchState="switchState" @changeMode="changeMode" @renderLyrics="renderLyrics"></MusicPlayer>
+            <MusicPlayer ref="player" :playMode="playMode" :playing="playing" :song="currentSong" @nextSong="nextSong" @prevSong="prevSong" @switchState="switchState" @changeMode="changeMode" @renderLyrics="renderLyrics" @checkLyric="checkLyric"></MusicPlayer>
         </div>
     </div>
 </template>
@@ -253,6 +253,9 @@ export default {
         },
         renderLyrics() {
             this.$refs.lyrics.renderLyrics();
+        },
+        checkLyric(time) {
+            this.$refs.lyrics.checkLyric(time);
         }
     },
     computed: {
@@ -389,7 +392,8 @@ html {
             }
             .lyrics-wrapper {
                 vertical-align: top;
-                width: 375px;
+                margin-left: 35px;
+                width: 340px;
                 display: inline-block;
                 height: 100%;
             }
