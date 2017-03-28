@@ -76,13 +76,14 @@ export default {
             }
         },
         searchKeyword() { // 通过关键词搜索歌曲
-            this.songList = [];
-            this.listLoading = true;
-
             let text = this.$refs.searchInput.value;
             if (text.trim() === '') { // 输入内容不能为空
                 return;
             }
+
+            this.songList = [];
+            this.listLoading = true;
+
             let array = text.split(' ');
             text = '';
             for (let i = 0; i < array.length; i++) {
@@ -357,6 +358,15 @@ html {
                         background: transparent;
                         border: none;
                         outline: none;
+                        &::-moz-placeholder {
+                            color: $textColor;
+                        }
+                        &::-webkit-input-placeholder {
+                            color: $textColor;
+                        }
+                        &:-ms-input-placeholder {
+                            color: $textColor;
+                        }
                     }
                     .search-btn {
                         position: absolute;

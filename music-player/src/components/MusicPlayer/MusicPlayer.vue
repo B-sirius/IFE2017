@@ -6,7 +6,7 @@
             <span class="bg-icon" :class="controlClass" @click="switchState"></span>
             <span @click="nextSong()" class="bg-icon next"></span>
         </div>
-        <div class="center-content">
+        <div class="right-content">
             <div class="intro">
                 <span class="title">{{song.songname}}</span>
                 <span class="singer">{{song.singername}}</span>
@@ -16,10 +16,12 @@
                     <span class="currTime">{{getTime(currLen)}}</span>
                     <span class="totalTime"> / {{getTime(totalLen)}}</span>
                 </div>
-                <span class="volume-btn" :class="volumeClass"></span>
-                <div ref="bar" @click="changeVolPos" class="volume-bar">
-                    <div :style="{width: volPos.btn + 'px'}" class="current-bar"></div>
-                    <div ref="volumeController" @click.stop="stopPass" @mousedown.stop="drag($event, 'volPos')" :style="{left: volPos.btn + 'px'}" class="controller"></div>
+                <div class="volume-wrapper">
+                    <span class="volume-btn" :class="volumeClass"></span>
+                    <div ref="bar" @click="changeVolPos" class="volume-bar">
+                        <div :style="{width: volPos.btn + 'px'}" class="current-bar"></div>
+                        <div ref="volumeController" @click.stop="stopPass" @mousedown.stop="drag($event, 'volPos')" :style="{left: volPos.btn + 'px'}" class="controller"></div>
+                    </div>
                 </div>
                 <span class="play_mod-icon" :class="play_modClass" @click="changeMode"></span>
                 <div class="progress_bar-wrapper">
@@ -196,7 +198,7 @@ export default {
                 this.progressPos.btn = parseFloat(((this.currLen / this.totalLen) * this.progressPos.max).toFixed(2));
 
                 this.$emit('checkLyric', this.currLen); // 检查歌词是否需要更新
-            }, 300);
+            }, 100);
         },
         changeVolPos(e) { // 点击设置音量条位置
             this.volPos.btn = e.offsetX;
@@ -281,13 +283,13 @@ export default {
             return className['volumeOn'];
         },
         play_modClass() {
-             const className = {
+            const className = {
                 order: 'order',
                 random: 'random',
                 cycle: 'cycle'
-             };
+            };
 
-             return className[this.playMode];
+            return className[this.playMode];
         }
     },
     mounted: function() {
@@ -307,6 +309,7 @@ $icon: 'https://y.gtimg.cn/mediastyle/yqq/img/player.png?max_age=2592000&v=749f8
 .player-container {
     width: 1100px;
     height: 115px;
+    font-size: 0;
     .left-content {
         display: inline-block;
         text-align: center;
@@ -349,10 +352,10 @@ $icon: 'https://y.gtimg.cn/mediastyle/yqq/img/player.png?max_age=2592000&v=749f8
             background-position: 0 -52px;
         }
     }
-    .center-content {
+    .right-content {
         display: inline-block;
         vertical-align: top;
-        width: 720px;
+        width: 850px;
         height: 100%;
         margin-left: 50px;
         .intro {
@@ -374,53 +377,58 @@ $icon: 'https://y.gtimg.cn/mediastyle/yqq/img/player.png?max_age=2592000&v=749f8
             margin-top: 13px;
             color: $textColor;
             .time {
+                font-size: 16px;
                 display: inline-block;
                 vertical-align: top;
             }
-            .volume-btn {
+            .volume-wrapper {
+                width: 130px;
                 display: inline-block;
-                width: 26px;
-                height: 21px;
-                margin-top: 1px;
                 margin-left: 16px;
-                background: url($icon);
-                opacity: 0.8;
-            }
-            .volume-on {
-                background-position: 0 -144px;
-            }
-            .volume-off {
-                background-position: 0 -182px;
-            }
-            .volume-btn:hover {
-                opacity: 1;
-            }
-            .volume-bar {
-                position: absolute;
-                display: inline-block;
-                margin-top: 10px;
-                margin-left: 10px;
-                width: 80px;
-                height: 2px;
-                background: $volumeColor;
-                cursor: pointer;
-                .current-bar {
-                    position: absolute;
-                    left: 0;
-                    top: 0;
-                    height: 2px;
-                    background: $currentVolumeColor;
+                .volume-btn {
+                    display: inline-block;
+                    width: 26px;
+                    height: 21px;
+                    margin-top: 1px;
+                    background: url($icon);
+                    opacity: 0.8;
                 }
-                .controller {
+                .volume-on {
+                    background-position: 0 -144px;
+                }
+                .volume-off {
+                    background-position: 0 -182px;
+                }
+                .volume-btn:hover {
+                    opacity: 1;
+                }
+                .volume-bar {
                     position: absolute;
-                    top: 0;
-                    margin-left: -5px;
-                    margin-top: -4px;
-                    width: 10px;
-                    height: 10px;
-                    background: $btnColor;
-                    border-radius: 50%;
+                    display: inline-block;
+                    margin-top: 10px;
+                    margin-left: 10px;
+                    width: 80px;
+                    height: 2px;
+                    background: $volumeColor;
                     cursor: pointer;
+                    .current-bar {
+                        position: absolute;
+                        left: 0;
+                        top: 0;
+                        height: 2px;
+                        background: $currentVolumeColor;
+                    }
+                    .controller {
+                        position: absolute;
+                        top: 0;
+                        margin-left: -5px;
+                        margin-top: -4px;
+                        width: 10px;
+                        height: 10px;
+                        background: $btnColor;
+                        border-radius: 50%;
+                        cursor: pointer;
+                    }
                 }
             }
             .play_mod-icon {
@@ -428,7 +436,6 @@ $icon: 'https://y.gtimg.cn/mediastyle/yqq/img/player.png?max_age=2592000&v=749f8
                 display: inline-block;
                 right: 0;
                 top: 0;
-                
                 background: url($icon);
                 opacity: 0.8;
                 cursor: pointer;
@@ -479,12 +486,6 @@ $icon: 'https://y.gtimg.cn/mediastyle/yqq/img/player.png?max_age=2592000&v=749f8
                 }
             }
         }
-    }
-    .right-content {
-        display: inline-block;
-        width: 90px;
-        margin-left: 30px;
-        line-height: 115px;
     }
 }
 </style>

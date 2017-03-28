@@ -27,10 +27,10 @@
                     <i class="play-btn" @click="playControl(index)"></i>
                 </div>
                 <div class="singer-wrapper inline-block">
-                    <span>{{song.singername}}</span>
+                    <span>{{song.singername || '未知'}}</span>
                 </div>
                 <div class="ablum-wrapper inline-block">
-                    <span>{{song.albumname}}</span>
+                    <span>{{song.albumname || '未知'}}</span>
                 </div>
             </li>
             <li v-show="loading" class="item text-center loading">加载中...</li>

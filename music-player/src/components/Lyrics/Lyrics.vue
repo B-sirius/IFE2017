@@ -5,11 +5,14 @@
             <img class="img" :src="cover">
         </div>
         <div id="lyricList" class="lyrics-content-wrapper">
-            <ul class="lyrics-content" ref="lyricsContent">
+            <ul v-show="!loading" class="lyrics-content" ref="lyricsContent">
                 <li v-for="lyric in lyricList.list" :class="{on: lyric.on}">
                     {{lyric.text}}
                 </li>
             </ul>
+            <div v-show="loading" class="loading">
+                正在加载......
+            </div>
         </div>
     </div>
 </template>
@@ -32,7 +35,8 @@ export default {
                 autoScrollAble: false,
                 list: []
             },
-            lyricScroll: null
+            lyricScroll: null,
+            loading: false
         }
     },
     methods: {
@@ -46,6 +50,8 @@ export default {
             };
         },
         renderLyrics() { // 对歌词模块进行渲染
+            this.loading = true; // 显示加载字样
+
             this.coverImage(); // 加载头图
 
             this.$http.get(this.urlDetail + this.song.songid).then((response) => {
@@ -56,6 +62,8 @@ export default {
                     this.lyricList.list = this.getLyricList();
 
                     this.setListScroll();
+
+                    this.loading = false;
                 });
             });
         },
@@ -66,6 +74,16 @@ export default {
 
             if (lyrics[0][0] === '[') { // 有时间轴
                 this.lyricList.autoScrollAble = true;
+                if (lyrics[0] === '[00:00:00]此歌曲为没有填词的纯音乐，请您欣赏') {
+                    let obj = {};
+                    obj.min = 0;
+                    obj.sec = 0;
+                    obj.ms = 0;
+                    obj.text = '此歌曲为没有填词的纯音乐，请您欣赏';
+                    obj.totalTime = 0;
+                    lyricObjs.push(obj);
+                    return lyricObjs;
+                }
 
                 lyrics.forEach((val, index) => {
                     if (index > 4) { // 之所以大于4,参照返回的数据格式
@@ -92,6 +110,20 @@ export default {
                         lyricObjs.push(obj);
                     }
                 });
+
+                if (lyricObjs.length === 0) {
+                    let obj = {
+                        text: '* 此歌曲暂无歌词 *',
+                        on: false
+                    }
+                    lyricObjs.push(obj);
+                } else {
+                    let obj = {
+                        text: '* 此歌词暂不支持自动滚动 *',
+                        on: false
+                    }
+                    lyricObjs.unshift(obj);
+                }
             }
 
             return lyricObjs; // 返回歌词列表
@@ -170,7 +202,7 @@ $onColor: #31c27c;
         width: 100%;
         top: 216px;
         bottom: 20px;
-        font-size: 14px;
+        font-size: 16px;
         line-height: 34px;
         overflow: hidden;
         .lyrics-content {
@@ -178,6 +210,14 @@ $onColor: #31c27c;
             .on {
                 color: $onColor;
             }
+        }
+        .loading {
+            position: absolute;
+            top: 0px;
+            bottom: 0px;
+            width: 100%;
+            height: 100%;
+            font-size: 16px;
         }
     }
 }
