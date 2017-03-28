@@ -1,6 +1,6 @@
 # music-player
 
-> html5音乐模仿器模块
+> html5音乐模放器
 
 ## Build Setup
 
