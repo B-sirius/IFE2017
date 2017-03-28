@@ -40,7 +40,7 @@ export default {
     },
     data() {
         return {
-            urlSearch: 'https://route.showapi.com/213-1?showapi_appid=26601&showapi_sign=adc05e2062a5402b81c563a3ced09208&keyword=', // 关键词搜索
+            urlSearch: 'https://route.showapi.com/213-1?showapi_appid=34565&showapi_sign=c38a8f85afc24a429be423d2fc465ecc&keyword=', // 关键词搜索
             searchText: '星际牛仔', // 记录上次搜索的关键词
             songList: [], // 目前的歌曲列表
             playedList: [], // 播放过的队列
