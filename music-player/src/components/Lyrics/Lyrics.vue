@@ -4,7 +4,7 @@
         <div class="cover">
             <img class="img" :src="cover">
         </div>
-        <div class="lyrics-content-wrapper">
+        <div id="lyricList" class="lyrics-content-wrapper">
             <ul class="lyrics-content" ref="lyricsContent">
                 <li v-for="lyric in lyricList.list" :class="{on: lyric.on}">
                     {{lyric.text}}
@@ -14,6 +14,8 @@
     </div>
 </template>
 <script>
+import IScroll from 'iscroll';
+
 export default {
     props: {
         song: {
@@ -27,9 +29,10 @@ export default {
             urlDetail: 'https://route.showapi.com/213-2?showapi_appid=26601&showapi_sign=adc05e2062a5402b81c563a3ced09208&musicid=', // 歌曲id搜索
             lyricText: '',
             lyricList: {
-                scrollAble: false,
+                autoScrollAble: false,
                 list: []
-            }
+            },
+            lyricScroll: null
         }
     },
     methods: {
@@ -42,7 +45,7 @@ export default {
                 self.cover = img.src;
             };
         },
-        renderLyrics() {
+        renderLyrics() { // 对歌词模块进行渲染
             this.coverImage(); // 加载头图
 
             this.$http.get(this.urlDetail + this.song.songid).then((response) => {
@@ -50,7 +53,9 @@ export default {
 
                 this.lyricText = response.lyric; // 将会被渲染到html中，原本lyric中的html code也会被解析好
                 this.$nextTick(() => {
-                    this.getLyricList();
+                    this.lyricList.list = this.getLyricList();
+
+                    this.setListScroll();
                 });
             });
         },
@@ -60,7 +65,7 @@ export default {
             let lyricObjs = [];
 
             if (lyrics[0][0] === '[') { // 有时间轴
-                this.lyricList.scrollAble = true;
+                this.lyricList.autoScrollAble = true;
 
                 lyrics.forEach((val, index) => {
                     if (index > 4) { // 之所以大于4,参照返回的数据格式
@@ -76,8 +81,8 @@ export default {
                         }
                     }
                 });
-            } else {
-                this.lyricList.scrollAble = false;
+            } else { // 无时间轴
+                this.lyricList.autoScrollAble = false;
 
                 lyrics.forEach((val, index) => {
                     let obj = {};
@@ -89,7 +94,7 @@ export default {
                 });
             }
 
-            this.lyricList.list = lyricObjs;
+            return lyricObjs; // 返回歌词列表
         },
         clearLyricHighlight() {
             for (let i = 0; i < this.lyricList.list.length; i++) {
@@ -104,7 +109,7 @@ export default {
             }
         },
         checkLyric(time) {
-            if (!this.lyricList.scrollAble) { // 不可滚动歌词，不做处理
+            if (!this.lyricList.autoScrollAble) { // 不可滚动歌词，不做处理
                 return;
             }
 
@@ -127,6 +132,20 @@ export default {
                 if (time > this.lyricList.list[length - 1].totalTime) { // 如果是最后一句歌词
                     this.setLyricHighlight(length - 1);
                 }
+            }
+        },
+        setListScroll() { // 设置歌词列表手动滚动
+            if (this.lyricScroll !== null) { // 如果创建过手动滚动，需销毁
+                this.lyricScroll.destroy();
+                this.$refs.lyricsContent.style.transform = 'translate3d(0, 0, 0)';
+                this.$refs.lyricsContent.style.transitionDuration = '0.5s';
+                this.lyricScroll = null;
+            }
+
+            if (!this.lyricList.autoScrollAble) { // 如果是不支持自动滚动的歌词，绑定触摸滚动
+                this.$nextTick(() => {
+                    this.lyricScroll = new IScroll('#lyricList');
+                });
             }
         }
     }
@@ -155,7 +174,7 @@ $onColor: #31c27c;
         line-height: 34px;
         overflow: hidden;
         .lyrics-content {
-            transition: 0.3s;
+            cursor: default;
             .on {
                 color: $onColor;
             }
