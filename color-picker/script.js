@@ -133,14 +133,80 @@ let selectors = (function() {
     return t;
 })();
 
-let panelCanvas = document.getElementById('panel');
-let panelCtx = panelCanvas.getContext('2d');
+let BarSelector = function(defaultColor, bar, btn) {
+    this.color = defaultColor;
+    this.bar = bar;
+    this.bar.self = this;
+    this.btn = btn;
+    this.btn.self = this;
+    this.btnPos = 0;
+    this.maxPos = 400;
+}
 
-let panelGradient = panelCtx.createLinearGradient(0, 0, 400, 400);
+BarSelector.prototype.pick = function() {
+    let h = this.color[0];
+    let s = this.color[1];
+    let v = this.color[2];
 
-panelGradient.addColorStop(0, 'hsl(120, 100%, 100%)');
-panelGradient.addColorStop(0.5, 'hsl(120, 100%, 50%)');
-panelGradient.addColorStop(1, 'hsl(120, 100%, 0%)');
+    let rgbArr = hsv2rgb(h, s, v); // 获得rgb颜色
 
-panelCtx.fillStyle = panelGradient;
-panelCtx.fillRect(0, 0, 400, 400);
+    let color = `rgb(${rgbArr[0]}, ${rgbArr[1]}, ${rgbArr[2]})`;
+    this.btn.style.background = color; // 设置按钮颜色
+
+    colorPanel.render(color); // 渲染取色板
+}
+
+BarSelector.prototype.changePos = function() {
+    this.btn.style.top = this.btnPos + 'px';
+
+    let h = ((this.btnPos / this.maxPos) * 360).toFixed();
+    this.color = [h, 1, 1];
+
+    this.pick();
+}
+
+let barSelector = (function() {
+    let defaultColor = [360, 1, 1]; // hsv
+
+    let bar = document.getElementById('bar');
+    let btn = document.getElementById('barBtn');
+
+    bar.onclick = function(e) {
+        bar.self.btnPos = e.offsetY;
+        bar.self.changePos();
+    }
+
+    return new BarSelector(defaultColor, bar, btn);
+})();
+
+// 鼠标点击后获得的颜色都是以hsv来计算，然后转换成rgb和hsl
+let colorPanel = (function() {
+    let canvas = document.getElementById('panel');
+    let ctx = canvas.getContext('2d');
+
+    let lightGradient = ctx.createLinearGradient(0, 0, 0, 400); // 亮度渲染
+
+    lightGradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
+    lightGradient.addColorStop(1, 'rgba(0, 0, 0, 1)');
+
+    return {
+        render: function(color) { // 需要渲染两次
+            ctx.clearRect(0, 0, 400, 400) // 清除画布
+
+            let colorGradient = ctx.createLinearGradient(0, 0, 400, 0); // 颜色渲染
+
+            colorGradient.addColorStop(0, 'rgb(255, 255, 255)');
+            colorGradient.addColorStop(1, color);
+
+            ctx.fillStyle = colorGradient;
+            ctx.fillRect(0, 0, 400, 400);
+
+            ctx.fillStyle = lightGradient;
+            ctx.fillRect(0, 0, 400, 400);
+        }
+    }
+})();
+
+let init = (() => {
+    barSelector.pick();
+})();

@@ -3,6 +3,7 @@ body {
 }
 
 .color-picker-container {
+    margin-top: 50px;
     display: inline-block;
     font-size: 0;
 }
@@ -12,16 +13,35 @@ body {
     float: left;
     width: 400px;
     height: 400px;
-    border: 2px solid #DEDEDE;
 }
 
 .pick-bar-wrapper {
+    position: relative;
     display: inline-block;
     float: left;
-    width: 26px;
+    width: 8px;
     height: 400px;
-    margin-left: 13px;
-    border: 2px solid #DEDEDE;
+    margin-left: 23px;
+}
+
+.pick-bar-wrapper .bar {
+    height: 100%;
+    background: linear-gradient(to bottom,hsl(0,100%,50%),hsl(60,100%,50%),hsl(120,100%,50%),hsl(180,100%,50%),hsl(240,100%,50%),hsl(300,100%,50%),hsl(360,100%,50%));
+    border-radius: 20px;
+}
+
+.pick-bar-wrapper .bar-btn {
+    position: absolute;
+    top: 0;
+    left: 0;
+    margin-left: -8px;
+    margin-top: -12px;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    background: #C2C2C2;
+    cursor: pointer;
 }
 
 .number-wrapper {
