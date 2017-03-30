@@ -1,0 +1,114 @@
+body {
+    font-family: PingFang SC, STHeitiSC-Light, Helvetica-Light, arial, sans-serifmargink;
+}
+
+.color-picker-container {
+    display: inline-block;
+    font-size: 0;
+}
+
+.color-panel-wrapper {
+    display: inline-block;
+    float: left;
+    width: 400px;
+    height: 400px;
+    border: 2px solid #DEDEDE;
+}
+
+.pick-bar-wrapper {
+    display: inline-block;
+    float: left;
+    width: 26px;
+    height: 400px;
+    margin-left: 13px;
+    border: 2px solid #DEDEDE;
+}
+
+.number-wrapper {
+    display: inline-block;
+    float: left;
+    height: 400px;
+    margin-left: 20px;
+}
+
+.rgb-wrapper,
+.hsl-wrapper {
+    height: 50%;
+    box-sizing: border-box;
+}
+
+.rgb-wrapper {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border-bottom: 1px solid #DEDEDE;
+    padding-bottom: 10px;
+}
+
+.hsl-wrapper {
+    display: flex;
+    justify-content: space-between;
+    flex-direction: column;
+    border-top: 1px solid #DEDEDE;
+    padding-top: 10px;
+}
+
+.selector-wrapper {
+    position: relative;
+    height: 55px;
+    font-size: 16px;
+}
+
+.selector-wrapper .selector {
+    position: relative;
+    width: 155px;
+    height: 100%;
+    margin-left: 15px;
+    padding-left: 10px;
+    padding-right: 40px;
+    font-size: 16px;
+    box-sizing: border-box;
+    border: 2px solid #DEDEDE;
+    border-radius: 3px;
+    outline: none;
+}
+
+.selector-wrapper .selector-btn {
+    width: 40px;
+    height: 50%;
+    font-size: 14px;
+    border-left: 2px solid #DEDEDE;
+    cursor: pointer;
+}
+
+.selector-wrapper .selector-btn.down {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+}
+
+.selector-wrapper .selector-btn.up {
+    position: absolute;
+    top: 0;
+    right: 0;
+}
+
+.selector-wrapper .selector-btn:hover {
+    background: #EBEBEB;
+}
+
+.selector-wrapper .selector-btn:active {
+    background: #DEDEDE;
+}
+
+.selector-wrapper .selector-btn .fa {
+    position: absolute;
+    top: 5px;
+    left: 16px;
+}
+
+.selector-wrapper .selectoer-btn .fa {
+    position: absolute;
+    top: 5px;
+    left: 16px;
+}

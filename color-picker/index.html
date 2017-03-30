@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>色彩选择器</title>
+    <link href="http://cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="color-picker-container">
+        <div class="color-panel-wrapper">
+            <canvas id="panel" width="400" height="400"></canvas>
+        </div>
+        <div class="pick-bar-wrapper">
+            <canvas id="bar" width="26" height="400"></canvas>
+        </div>
+        <div class="number-wrapper">
+            <div id="rgbWrapper" class="rgb-wrapper">
+                <div class="selector-wrapper">
+                    <span class="text">R</span>
+                    <input class="selector" value="255">
+                    </input>
+                    <div class="up selector-btn"><i class="fa fa-caret-up" aria-hidden="true"></i></div>
+                    <div class="down selector-btn"><i class="fa fa-caret-down" aria-hidden="true"></i></div>
+                </div>
+                <div class="selector-wrapper">
+                    <span class="text">G</span>
+                    <input class="selector" value="255">
+                    </input>
+                    <div class="up selector-btn"><i class="fa fa-caret-up" aria-hidden="true"></i></div>
+                    <div class="down selector-btn"><i class="fa fa-caret-down" aria-hidden="true"></i></div>
+                </div>
+                <div class="selector-wrapper">
+                    <span class="text">B</span>
+                    <input class="selector" value="255">
+                    </input>
+                    <div class="up selector-btn"><i class="fa fa-caret-up" aria-hidden="true"></i></div>
+                    <div class="down selector-btn"><i class="fa fa-caret-down" aria-hidden="true"></i></div>
+                </div>
+            </div>
+            <div id="hslWrapper" class="hsl-wrapper">
+                <div class="selector-wrapper">
+                    <span class="text">H</span>
+                    <input class="selector" value="1">
+                    </input>
+                    <div class="up selector-btn"><i class="fa fa-caret-up" aria-hidden="true"></i></div>
+                    <div class="down selector-btn"><i class="fa fa-caret-down" aria-hidden="true"></i></div>
+                </div>
+                <div class="selector-wrapper">
+                    <span class="text">S</span>
+                    <input class="selector" value="1">
+                    </input>
+                    <div class="up selector-btn"><i class="fa fa-caret-up" aria-hidden="true"></i></div>
+                    <div class="down selector-btn"><i class="fa fa-caret-down" aria-hidden="true"></i></div>
+                </div>
+                <div class="selector-wrapper">
+                    <span class="text">L</span>
+                    <input class="selector" value="1">
+                    </input>
+                    <div class="up selector-btn"><i class="fa fa-caret-up" aria-hidden="true"></i></div>
+                    <div class="down selector-btn"><i class="fa fa-caret-down" aria-hidden="true"></i></div>
+                </div>
+            </div>
+        </div>
+        <script src="script.js"></script>
+</body>
+
+</html>
+
