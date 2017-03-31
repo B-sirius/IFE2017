@@ -1,5 +1,5 @@
 'use strict';
-// 选择器构造器，传入的分别是选择器的初始值，最低值，最高值，精度，上按钮dom，下按钮dom，输入框dom
+// 数字选择器构造器，传入的分别是选择器的初始值，最低值，最高值，精度，上按钮dom，下按钮dom，输入框dom
 let Selector = function(defaultVal, min, max, precision, input, upBtn, downBtn) {
     this.val = defaultVal;
     this.min = min;
@@ -21,6 +21,11 @@ Selector.prototype.isLegal = function(newVal) { // 合法性检查
         }
     }
     return false;
+}
+
+Selector.prototype.setVal = function(newVal) {
+    this.val = newVal;
+    this.input.value = this.val;
 }
 
 Selector.prototype.enter = function(e) {
@@ -68,7 +73,7 @@ Selector.prototype.down = function(callback) {
     fn(this);
 }
 
-// 选择器实例
+// 数字选择器实例
 let selectors = (function() {
     let t = {
         rgb: {},
@@ -133,20 +138,23 @@ let selectors = (function() {
     return t;
 })();
 
-let BarSelector = function(defaultColor, bar, btn) {
+// 条形选择器构造器，传入的分别是颜色初始值(hsv)数组，初始位置，最大位置，颜色条和按钮的dom
+let BarSelector = function(defaultColor, defaultPos, maxpos, bar, btn) {
     this.color = defaultColor;
+    this.btnPos = defaultPos;
+    this.maxPos = maxpos;
     this.bar = bar;
     this.bar.self = this;
     this.btn = btn;
     this.btn.self = this;
-    this.btnPos = 0;
-    this.maxPos = 400;
 }
 
 BarSelector.prototype.pick = function() {
-    let h = this.color[0];
-    let s = this.color[1];
-    let v = this.color[2];
+    let h = parseFloat(((this.btnPos / this.maxPos) * 360).toFixed());
+    let s = 1;
+    let v = 1;
+
+    this.color = [h, s, v];
 
     let rgbArr = hsv2rgb(h, s, v); // 获得rgb颜色
 
@@ -154,17 +162,17 @@ BarSelector.prototype.pick = function() {
     this.btn.style.background = color; // 设置按钮颜色
 
     colorPanel.render(color); // 渲染取色板
+
+    panelSelector.pick(); // 取色板取色
 }
 
 BarSelector.prototype.changePos = function() {
     this.btn.style.top = this.btnPos + 'px';
 
-    let h = ((this.btnPos / this.maxPos) * 360).toFixed();
-    this.color = [h, 1, 1];
-
     this.pick();
 }
 
+// 条行选择器实例 
 let barSelector = (function() {
     let defaultColor = [360, 1, 1]; // hsv
 
@@ -176,7 +184,58 @@ let barSelector = (function() {
         bar.self.changePos();
     }
 
-    return new BarSelector(defaultColor, bar, btn);
+    return new BarSelector(defaultColor, 0, 400, bar, btn);
+})();
+
+// 面板选择器构造器，传入的是按钮实例
+let PanelSelector = function(defaultX, defaultY, maxX, maxY, btn, canvas) {
+    this.color = [];
+    this.x = defaultX;
+    this.y = defaultY;
+    this.maxX = maxX;
+    this.maxY = maxY;
+    this.btn = btn;
+    this.btn.self = this;
+    this.panel = panel;
+    this.panel.self = this;
+}
+
+PanelSelector.prototype.pick = function() {
+    let h = barSelector.color[0];
+    let s = (this.x / this.maxX).toFixed(2);
+    let v = (1 - this.y / this.maxY).toFixed(2);
+
+    this.color = [h, s, v];
+
+    let rgbArr = hsv2rgb(h, s, v);
+
+    this.btn.style.background = `rgb(${rgbArr[0]}, ${rgbArr[1]}, ${rgbArr[2]})`;
+
+    selectors.rgb.R.setVal(parseFloat(rgbArr[0]));
+    selectors.rgb.G.setVal(parseFloat(rgbArr[1]));
+    selectors.rgb.B.setVal(parseFloat(rgbArr[2]));
+}
+
+PanelSelector.prototype.changePos = function() {
+    this.btn.style.left = this.x + 'px';
+    this.btn.style.top = this.y + 'px';
+
+    this.pick();
+}
+
+let panelSelector = (function() {
+    let btn = document.getElementById('panelBtn');
+
+    let panel = document.getElementById('panel');
+
+    panel.onclick = function(e) {
+        panel.self.x = e.offsetX;
+        panel.self.y = e.offsetY;
+
+        panel.self.changePos();
+    }
+
+    return new PanelSelector(400, 0, 400, 400, btn, panel);
 })();
 
 // 鼠标点击后获得的颜色都是以hsv来计算，然后转换成rgb和hsl

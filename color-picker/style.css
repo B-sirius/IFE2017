@@ -9,10 +9,25 @@ body {
 }
 
 .color-panel-wrapper {
+    position: relative;
     display: inline-block;
     float: left;
     width: 400px;
     height: 400px;
+}
+
+.color-panel-wrapper .panel-btn {
+    position: absolute;
+    top: 0;
+    left: 400px;
+    margin-left: -12px;
+    margin-top: -10px;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    background: #C2C2C2;
+    cursor: pointer;
 }
 
 .pick-bar-wrapper {
