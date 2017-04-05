@@ -124,8 +124,10 @@ let selectors = (function() {
 
         if (type === 'H') {
             t.hsl[type] = new Selector(360, 0, 360, 1, input, upBtn, downBtn);
+        } else if (type === 'S'){
+            t.hsl[type] = new Selector(1, 0, 1, 0.01, input, upBtn, downBtn);
         } else {
-            t.hsl[type] = new Selector(0, 0, 1, 0.01, input, upBtn, downBtn);
+            t.hsl[type] = new Selector(0.5, 0, 1, 0.01, input, upBtn, downBtn);
         }
 
         // 事件监听
@@ -133,13 +135,19 @@ let selectors = (function() {
             input.self.enter(e);
         });
         input.onkeyup = (() => {
-            input.self.afterEnter();
+            input.self.afterEnter(() => {
+                panelSelector.pickByHSL();
+            });
         });
         upBtn.onclick = (() => {
-            upBtn.self.up();
+            upBtn.self.up(() => {
+                panelSelector.pickByHSL();
+            });
         });
         downBtn.onclick = (() => {
-            downBtn.self.down();
+            downBtn.self.down(() => {
+                panelSelector.pickByHSL();
+            });
         });
     }
 
@@ -180,7 +188,10 @@ BarSelector.prototype.setPos = function(e) {
 
     panelSelector.pick(); // 取色板取色
 
-    panelSelector.setSelectorsVal();
+    panelSelector.setRgbVal();
+    panelSelector.setHslVal();
+
+    panelSelector.show();
 }
 
 // 条行选择器实例 
@@ -198,7 +209,7 @@ let barSelector = (function() {
 })();
 
 // 面板选择器构造器，传入的是按钮实例
-let PanelSelector = function(defaultX, defaultY, maxX, maxY, btn, canvas) {
+let PanelSelector = function(defaultX, defaultY, maxX, maxY, btn, canvas, pickedColorEl, value) {
     this.color = [];
     this.x = defaultX;
     this.y = defaultY;
@@ -208,6 +219,8 @@ let PanelSelector = function(defaultX, defaultY, maxX, maxY, btn, canvas) {
     this.btn.self = this;
     this.panel = panel;
     this.panel.self = this;
+    this.pickedColorEl = pickedColorEl;
+    this.value = value;
 }
 
 PanelSelector.prototype.pickByRGB = function() { // 依据rgb值进行取色
@@ -233,6 +246,35 @@ PanelSelector.prototype.pickByRGB = function() { // 依据rgb值进行取色
 
     this.pick(); // 取色板取色
 
+    this.setHslVal();
+}
+
+PanelSelector.prototype.pickByHSL = function() { // 依据hsl值进行取色
+    let h = selectors.hsl.H.val;
+    let s = selectors.hsl.S.val;
+    let l = selectors.hsl.L.val;
+
+    let hsvArr = hsl2hsv(h, s, l);
+
+    h = hsvArr[0];
+    s = hsvArr[1];
+    let v = hsvArr[2];
+
+    this.x = s * this.maxX;
+    this.y = this.maxY - v * this.maxY;
+    this.btn.style.left = this.x + 'px';
+    this.btn.style.top = this.y + 'px';
+
+    barSelector.btnPos = fixed(barSelector.maxPos * (h / 360));
+    barSelector.btn.style.top = barSelector.btnPos + 'px';
+
+    barSelector.pick(); // 取色条取色
+
+    this.pick(); // 取色板取色
+
+    this.setRgbVal();
+
+    this.show(); // 渲染展示面板
 }
 
 PanelSelector.prototype.pick = function() {
@@ -245,6 +287,8 @@ PanelSelector.prototype.pick = function() {
     let rgbArr = hsv2rgb(h, s, v);
 
     this.btn.style.background = `rgb(${rgbArr[0]}, ${rgbArr[1]}, ${rgbArr[2]})`;
+
+    this.show();
 }
 
 PanelSelector.prototype.setPos = function(e) {
@@ -255,10 +299,13 @@ PanelSelector.prototype.setPos = function(e) {
 
     this.pick();
 
-    this.setSelectorsVal();
+    this.setRgbVal();
+    this.setHslVal();
+
+    this.show();
 }
 
-PanelSelector.prototype.setSelectorsVal = function() {
+PanelSelector.prototype.setRgbVal = function() {
     let h = this.color[0];
     let s = this.color[1];
     let v = this.color[2];
@@ -268,18 +315,59 @@ PanelSelector.prototype.setSelectorsVal = function() {
     selectors.rgb.R.setVal(rgbArr[0]);
     selectors.rgb.G.setVal(rgbArr[1]);
     selectors.rgb.B.setVal(rgbArr[2]);
-} 
+}
+
+PanelSelector.prototype.setHslVal = function() {
+    let h = this.color[0];
+    let s = this.color[1];
+    let v = this.color[2];
+
+    let hslArr = hsv2hsl(h, s, v);
+
+    selectors.hsl.H.setVal(hslArr[0]);
+    selectors.hsl.S.setVal(hslArr[1]);
+    selectors.hsl.L.setVal(hslArr[2]);
+}
+
+PanelSelector.prototype.show = function() {
+    let rgb = [selectors.rgb.R.val, selectors.rgb.G.val, selectors.rgb.B.val];
+    let hsl = [selectors.hsl.H.val, selectors.hsl.S.val, selectors.hsl.L.val];
+    let hsv = this.color;
+
+    this.pickedColorEl.style.background = `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+
+    let rgbText = `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+    let hslText = `hsl(${hsl[0]}, ${hsl[1]}, ${hsl[2]})`;
+    let hsvText = `hsv(${hsv[0]}, ${hsv[1]}, ${hsv[2]})`;
+
+
+    this.value.rgb.innerHTML = rgbText;
+    this.value.hsl.innerHTML = hslText;
+    this.value.hsv.innerHTML = hsvText;
+}
 
 let panelSelector = (function() {
     let btn = document.getElementById('panelBtn');
 
     let panel = document.getElementById('panel');
 
+    let pickedColorEl = document.getElementById('pickedColor');
+
+    let rgb = document.getElementById('rgb');
+    let hsl = document.getElementById('hsl');
+    let hsv = document.getElementById('hsv');
+
+    let value = {
+        rgb,
+        hsl,
+        hsv
+    };
+
     panel.onclick = function(e) {
         panel.self.setPos(e);
     }
 
-    return new PanelSelector(400, 0, 400, 400, btn, panel);
+    return new PanelSelector(400, 0, 400, 400, btn, panel, pickedColorEl, value);
 })();
 
 // 鼠标点击后获得的颜色都是以hsv来计算，然后转换成rgb和hsl
@@ -311,5 +399,10 @@ let colorPanel = (function() {
 })();
 
 let init = (() => {
+    new Clipboard('#rgbBtn');
+    new Clipboard('#hslBtn');
+    new Clipboard('#hsvBtn');
+
     barSelector.pick();
+    panelSelector.pick();
 })();

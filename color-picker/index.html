@@ -10,6 +10,7 @@
 
 <body>
     <div class="color-picker-container">
+        div
         <div class="color-panel-wrapper">
             <canvas id="panel" width="400" height="400"></canvas>
             <div id="panelBtn" class="panel-btn"></div>
@@ -66,6 +67,24 @@
                 </div>
             </div>
         </div>
+        <div class="picked-color-wrapper">
+            <div id="pickedColor" class="picked-color"></div>
+            <div class="value-wrapper">
+                <div class="value-content"> 
+                    <span class="value" id="rgb"></span>
+                    <span class="copy-btn" id="rgbBtn" data-clipboard-target="#rgb">Copy</span>
+                </div>
+                <div class="value-content">
+                    <span class="value" id="hsl"></span>
+                    <span class="copy-btn" id="hslBtn" data-clipboard-target="#hsl">Copy</span>
+                </div>
+                <div class="value-content">
+                    <span class="value" id="hsv"></span>
+                    <span class="copy-btn" id="hsvBtn" data-clipboard-target="#hsv">Copy</span>
+                </div>
+            </div>
+        </div>
+        <script src="//cdn.bootcss.com/clipboard.js/1.6.1/clipboard.min.js"></script>
         <script src="common.js"></script>
         <script src="colorConvert.js"></script>
         <script src="script.js"></script>
