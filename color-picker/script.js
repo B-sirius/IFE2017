@@ -23,7 +23,7 @@ Selector.prototype.isLegal = function(newVal) { // 合法性检查
     return false;
 }
 
-Selector.prototype.setVal = function(newVal) {
+Selector.prototype.setVal = function(newVal) { // 被动改变值
     this.val = newVal;
     this.input.value = this.val;
 }
@@ -39,20 +39,19 @@ Selector.prototype.afterEnter = function(callback) {
     if (this.input.value === '') {
         this.input.value = 0;
     }
-    let newVal = this.input.value;
+    let newVal = parseFloat(this.input.value);
     if (!this.isLegal(newVal)) {
         this.input.value = this.val;
         return;
     }
-    this.val = parseFloat(newVal);
-    console.log(this.val);
+    this.val = newVal;
 
     let fn = callback || function() {};
     fn();
 }
 
 Selector.prototype.up = function(callback) {
-    this.val = parseFloat((this.val + this.precision).toFixed(2));
+    this.val = fixed(this.val + this.precision, 2);
     if (this.val > this.max) {
         this.val = this.max;
     }
@@ -63,7 +62,7 @@ Selector.prototype.up = function(callback) {
 }
 
 Selector.prototype.down = function(callback) {
-    this.val = parseFloat((this.val - this.precision).toFixed(2));
+    this.val = fixed(this.val - this.precision, 2);
     if (this.val < this.min) {
         this.val = this.min;
     }
@@ -90,20 +89,30 @@ let selectors = (function() {
         let upBtn = selector.getElementsByClassName('up')[0];
         let downBtn = selector.getElementsByClassName('down')[0];
 
-        t.rgb[type] = new Selector(255, 0, 255, 1, input, upBtn, downBtn);
+        if (type === 'R') {
+            t.rgb[type] = new Selector(255, 0, 255, 1, input, upBtn, downBtn);
+        } else {
+            t.rgb[type] = new Selector(0, 0, 255, 1, input, upBtn, downBtn);
+        }
 
-        // 事件检测
+        // 事件监听
         input.onkeydown = ((e) => {
             input.self.enter(e);
         });
         input.onkeyup = (() => {
-            input.self.afterEnter();
+            input.self.afterEnter(() => {
+                panelSelector.pickByRGB();
+            });
         });
         upBtn.onclick = (() => {
-            upBtn.self.up();
+            upBtn.self.up(() => {
+                panelSelector.pickByRGB();
+            });
         });
         downBtn.onclick = (() => {
-            downBtn.self.down();
+            downBtn.self.down(() => {
+                panelSelector.pickByRGB();
+            });
         });
     }
 
@@ -119,8 +128,7 @@ let selectors = (function() {
             t.hsl[type] = new Selector(0, 0, 1, 0.01, input, upBtn, downBtn);
         }
 
-
-        // 事件检测
+        // 事件监听
         input.onkeydown = ((e) => {
             input.self.enter(e);
         });
@@ -150,7 +158,7 @@ let BarSelector = function(defaultColor, defaultPos, maxpos, bar, btn) {
 }
 
 BarSelector.prototype.pick = function() {
-    let h = parseFloat(((this.btnPos / this.maxPos) * 360).toFixed());
+    let h = fixed((this.btnPos / this.maxPos) * 360);
     let s = 1;
     let v = 1;
 
@@ -162,14 +170,17 @@ BarSelector.prototype.pick = function() {
     this.btn.style.background = color; // 设置按钮颜色
 
     colorPanel.render(color); // 渲染取色板
-
-    panelSelector.pick(); // 取色板取色
 }
 
-BarSelector.prototype.changePos = function() {
+BarSelector.prototype.setPos = function(e) {
+    this.btnPos = e.offsetY;
     this.btn.style.top = this.btnPos + 'px';
 
     this.pick();
+
+    panelSelector.pick(); // 取色板取色
+
+    panelSelector.setSelectorsVal();
 }
 
 // 条行选择器实例 
@@ -180,8 +191,7 @@ let barSelector = (function() {
     let btn = document.getElementById('barBtn');
 
     bar.onclick = function(e) {
-        bar.self.btnPos = e.offsetY;
-        bar.self.changePos();
+        bar.self.setPos(e);
     }
 
     return new BarSelector(defaultColor, 0, 400, bar, btn);
@@ -200,28 +210,65 @@ let PanelSelector = function(defaultX, defaultY, maxX, maxY, btn, canvas) {
     this.panel.self = this;
 }
 
+PanelSelector.prototype.pickByRGB = function() { // 依据rgb值进行取色
+    let r = selectors.rgb.R.val;
+    let g = selectors.rgb.G.val;
+    let b = selectors.rgb.B.val;
+
+    let hsvArr = rgb2hsv(r, g, b);
+
+    let h = hsvArr[0];
+    let s = hsvArr[1];
+    let v = hsvArr[2];
+
+    this.x = s * this.maxX;
+    this.y = this.maxY - v * this.maxY;
+    this.btn.style.left = this.x + 'px';
+    this.btn.style.top = this.y + 'px';
+
+    barSelector.btnPos = fixed(barSelector.maxPos * (h / 360));
+    barSelector.btn.style.top = barSelector.btnPos + 'px';
+
+    barSelector.pick(); // 取色条取色
+
+    this.pick(); // 取色板取色
+
+}
+
 PanelSelector.prototype.pick = function() {
     let h = barSelector.color[0];
-    let s = (this.x / this.maxX).toFixed(2);
-    let v = (1 - this.y / this.maxY).toFixed(2);
+    let s = fixed(this.x / this.maxX, 2);
+    let v = fixed(1 - this.y / this.maxY, 2);
 
     this.color = [h, s, v];
 
     let rgbArr = hsv2rgb(h, s, v);
 
     this.btn.style.background = `rgb(${rgbArr[0]}, ${rgbArr[1]}, ${rgbArr[2]})`;
-
-    selectors.rgb.R.setVal(parseFloat(rgbArr[0]));
-    selectors.rgb.G.setVal(parseFloat(rgbArr[1]));
-    selectors.rgb.B.setVal(parseFloat(rgbArr[2]));
 }
 
-PanelSelector.prototype.changePos = function() {
+PanelSelector.prototype.setPos = function(e) {
+    this.x = e.offsetX;
+    this.y = e.offsetY;
     this.btn.style.left = this.x + 'px';
     this.btn.style.top = this.y + 'px';
 
     this.pick();
+
+    this.setSelectorsVal();
 }
+
+PanelSelector.prototype.setSelectorsVal = function() {
+    let h = this.color[0];
+    let s = this.color[1];
+    let v = this.color[2];
+
+    let rgbArr = hsv2rgb(h, s, v);
+
+    selectors.rgb.R.setVal(rgbArr[0]);
+    selectors.rgb.G.setVal(rgbArr[1]);
+    selectors.rgb.B.setVal(rgbArr[2]);
+} 
 
 let panelSelector = (function() {
     let btn = document.getElementById('panelBtn');
@@ -229,10 +276,7 @@ let panelSelector = (function() {
     let panel = document.getElementById('panel');
 
     panel.onclick = function(e) {
-        panel.self.x = e.offsetX;
-        panel.self.y = e.offsetY;
-
-        panel.self.changePos();
+        panel.self.setPos(e);
     }
 
     return new PanelSelector(400, 0, 400, 400, btn, panel);

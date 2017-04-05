@@ -1,3 +1,4 @@
+'use strict';
 let hsv2rgb = function(h, s, v) {
     let r, g, b;
 
@@ -28,5 +29,35 @@ let hsv2rgb = function(h, s, v) {
             break;
     }
 
-    return [(r * 255).toFixed(), (g * 255).toFixed(), (b * 255).toFixed()];
+    return [fixed(r * 255), fixed(g * 255), fixed(b * 255)];
+}
+
+let rgb2hsv = function(r, g, b) {
+    r /= 255, g /= 255, b /= 255;
+
+    let max = Math.max(r, g, b),
+        min = Math.min(r, g, b);
+    let h, s, v;
+    v = max;
+
+    let d = max - min;
+    s = max == 0 ? 0 : d / max;
+
+    if (max == min) {
+        h = 0;
+    } else {
+        switch (max) {
+            case r:
+                h = 60 * ((g - b) / d + (g < b ? 6 : 0));
+                break;
+            case g:
+                h = 60 * ((b - r) / d + 2);
+                break;
+            case b:
+                h = 60 * ((r - g) / d + 4);
+                break;
+        }
+    }
+
+    return [fixed(h), fixed(s, 2), fixed(v, 2)];
 }
