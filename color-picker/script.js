@@ -124,7 +124,7 @@ let selectors = (function() {
 
         if (type === 'H') {
             t.hsl[type] = new Selector(360, 0, 360, 1, input, upBtn, downBtn);
-        } else if (type === 'S'){
+        } else if (type === 'S') {
             t.hsl[type] = new Selector(1, 0, 1, 0.01, input, upBtn, downBtn);
         } else {
             t.hsl[type] = new Selector(0.5, 0, 1, 0.01, input, upBtn, downBtn);
@@ -194,6 +194,33 @@ BarSelector.prototype.setPos = function(e) {
     panelSelector.show();
 }
 
+BarSelector.prototype.move = function(e) {
+    let oldPos = this.oldPos;
+
+    let startPos = this.startPos;
+
+    let distance = e.pageY - startPos;
+
+    this.btnPos = oldPos + distance;
+
+    if (this.btnPos < 0) { 
+        this.btnPos = 0;
+    } else if (this.btnPos > this.maxPos) {
+        this.btnPos = this.maxPos;
+    }
+
+    this.btn.style.top = this.btnPos + 'px';
+
+    this.pick();
+
+    panelSelector.pick(); // 取色板取色
+
+    panelSelector.setRgbVal();
+    panelSelector.setHslVal();
+
+    panelSelector.show();
+}
+
 // 条行选择器实例 
 let barSelector = (function() {
     let defaultColor = [360, 1, 1]; // hsv
@@ -204,6 +231,21 @@ let barSelector = (function() {
     bar.onclick = function(e) {
         bar.self.setPos(e);
     }
+
+    let t = throttleV2(function(e) {
+        btn.self.move(e);
+    }, 15, 30); // 必须确保调用点的this指向是PanelSelector对象
+
+    btn.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        
+        btn.self.startPos = e.pageY;
+        btn.self.oldPos = btn.self.btnPos;
+        window.addEventListener('mousemove', t);
+    });
+    window.addEventListener('mouseup', function() {
+        window.removeEventListener('mousemove', t);
+    });
 
     return new BarSelector(defaultColor, 0, 400, bar, btn);
 })();
@@ -346,8 +388,39 @@ PanelSelector.prototype.show = function() {
     this.value.hsv.innerHTML = hsvText;
 }
 
-PanelSelector.prototype.move = function() {
-    console.log(this);
+PanelSelector.prototype.move = function(e) {
+    let oldX = this.oldPos.x,
+        oldY = this.oldPos.y;
+
+    let startX = this.startPos.x,
+        startY = this.startPos.y;
+
+    let distanceX = e.pageX - startX,
+        distanceY = e.pageY - startY;
+
+    this.x = oldX + distanceX;
+    this.y = oldY + distanceY;
+
+    if (this.x < 0) {
+        this.x = 0;
+    } else if (this.x > this.maxX) {
+        this.x = this.maxX;
+    }
+    if (this.y < 0) { 
+        this.y = 0;
+    } else if (this.y > this.maxY) {
+        this.y = this.maxY;
+    }
+
+    this.btn.style.left = this.x + 'px';
+    this.btn.style.top = this.y + 'px';
+
+    this.pick();
+
+    this.setRgbVal();
+    this.setHslVal();
+
+    this.show();
 }
 
 let panelSelector = (function() {
@@ -372,11 +445,20 @@ let panelSelector = (function() {
         panel.self.setPos(e);
     }
 
-    let t = throttleV2(function() {
-        btn.self.move();
-    }, 60, 100); // 必须确保调用点的this指向是PanelSelector对象
+    let t = throttleV2(function(e) {
+        btn.self.move(e);
+    }, 15, 30); // 必须确保调用点的this指向是PanelSelector对象
 
-    btn.addEventListener('mousedown', function() {
+    btn.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        btn.self.startPos = {
+            x: e.pageX,
+            y: e.pageY
+        }
+        btn.self.oldPos = {
+            x: btn.self.x,
+            y: btn.self.y
+        }
         window.addEventListener('mousemove', t);
     });
     window.addEventListener('mouseup', function() {
