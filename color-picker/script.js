@@ -346,6 +346,10 @@ PanelSelector.prototype.show = function() {
     this.value.hsv.innerHTML = hsvText;
 }
 
+PanelSelector.prototype.move = function() {
+    console.log(this);
+}
+
 let panelSelector = (function() {
     let btn = document.getElementById('panelBtn');
 
@@ -363,9 +367,21 @@ let panelSelector = (function() {
         hsv
     };
 
+    // 事件绑定
     panel.onclick = function(e) {
         panel.self.setPos(e);
     }
+
+    let t = throttleV2(function() {
+        btn.self.move();
+    }, 60, 100); // 必须确保调用点的this指向是PanelSelector对象
+
+    btn.addEventListener('mousedown', function() {
+        window.addEventListener('mousemove', t);
+    });
+    window.addEventListener('mouseup', function() {
+        window.removeEventListener('mousemove', t);
+    });
 
     return new PanelSelector(400, 0, 400, 400, btn, panel, pickedColorEl, value);
 })();
