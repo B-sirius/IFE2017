@@ -1,6 +1,7 @@
 'use strict';
-// 数字选择器构造器，传入的分别是选择器的初始值，最低值，最高值，精度，上按钮dom，下按钮dom，输入框dom
-let Selector = function(defaultVal, min, max, precision, input, upBtn, downBtn) {
+// 数字选择器构造器，传入的分别是选择器的种类，初始值，最低值，最高值，精度，上按钮dom，下按钮dom，输入框dom，触发器的快/慢触发时间，速度切换时间(ms)
+let Selector = function(type, defaultVal, min, max, precision, input, upBtn, downBtn, normalSpeed, fastSpeed, swichTime) {
+    this.type = type;
     this.val = defaultVal;
     this.min = min;
     this.max = max;
@@ -8,10 +9,151 @@ let Selector = function(defaultVal, min, max, precision, input, upBtn, downBtn) 
     this.input = input;
     this.upBtn = upBtn;
     this.downBtn = downBtn;
+    this.normalSpeed = normalSpeed || 800;
+    this.fastSpeed = fastSpeed || 50;
+    this.swichTime = swichTime || 4000;
     this.input.self = this;
     this.input.value = this.val;
     this.upBtn.self = this;
     this.downBtn.self = this;
+    this.fastId = null;
+    this.slowId = null;
+    this.timerId = null;
+}
+
+Selector.prototype.addEventListener = function() {
+    let self = this;
+
+    this.input.onkeydown = ((e) => {
+        this.enter(e);
+    });
+    this.input.onkeyup = (() => {
+        this.afterEnter(() => {
+            if (this.type === 'rgb') {
+                panelSelector.pickByRGB();
+            } else if(this.type = 'hsl') {
+                panelSelector.pickByHSL();
+            } else {
+                throw '类型未定义';
+            }
+        })
+    });
+
+    this.upBtn.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+
+        this.up(() => {
+            if (this.type === 'rgb') {
+                panelSelector.pickByRGB();
+            } else if(this.type === 'hsl') {
+                panelSelector.pickByHSL();
+            } else {
+                throw '类型未定义';
+            }
+        });
+
+        this.normalId = setInterval(() => {
+            this.up(() => {
+                if (this.type === 'rgb') {
+                    panelSelector.pickByRGB();
+                } else if(this.type === 'hsl') {
+                    panelSelector.pickByHSL();
+                } else {
+                    throw '类型未定义';
+                }
+            });
+        }, this.normalSpeed);
+
+        this.timer = setTimeout(() => {
+            clearInterval(this.normalId);
+            this.normalId = null;
+
+            this.fastId = setInterval(() => {
+                this.up(() => {
+                    if (this.type === 'rgb') {
+                        panelSelector.pickByRGB();
+                    } else if(this.type === 'hsl') {
+                        panelSelector.pickByHSL();
+                    } else {
+                        throw '类型未定义';
+                    }
+                });
+            }, this.fastSpeed);
+        }, this.swichTime);
+    });
+
+    this.upBtn.addEventListener('mouseup', (e) => {
+        this.removeEventListener();
+    });
+
+    this.upBtn.addEventListener('mouseout', (e) => {
+        this.removeEventListener();
+    });
+
+    this.downBtn.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+
+        this.down(() => {
+            if (this.type === 'rgb') {
+                panelSelector.pickByRGB();
+            } else if(this.type === 'hsl') {
+                panelSelector.pickByHSL();
+            } else {
+                throw '类型未定义';
+            }
+        });
+
+        this.normalId = setInterval(() => {
+            this.down(() => {
+                if (this.type === 'rgb') {
+                    panelSelector.pickByRGB();
+                } else if(this.type === 'hsl') {
+                    panelSelector.pickByHSL();
+                } else {
+                    throw '类型未定义';
+                }
+            });
+        }, this.normalSpeed);
+
+        this.timer = setTimeout(() => {
+            clearInterval(this.normalId);
+            this.normalId = null;
+            this.fastId = setInterval(() => {
+                this.down(() => {
+                    if (this.type === 'rgb') {
+                        panelSelector.pickByRGB();
+                    } else if(this.type === 'hsl') {
+                        panelSelector.pickByHSL();
+                    } else {
+                        throw '类型未定义';
+                    }
+                });
+            }, this.fastSpeed);
+        }, this.swichTime);
+    });
+
+    this.downBtn.addEventListener('mouseup', () => {
+        this.removeEventListener();
+    });
+
+    this.downBtn.addEventListener('mouseout', () => {
+        this.removeEventListener();
+    });
+}
+
+Selector.prototype.removeEventListener = function() {
+    if (this.normalId !== null) {
+        clearInterval(this.normalId);
+        this.normalId = null;
+    } else if (this.fastId !== null) {
+        clearInterval(this.fastId);
+        this.fastId = null;
+    }
+
+    if (this.timer !== null) {
+        clearTimeout(this.timer);
+        this.timer = null;
+    }
 }
 
 Selector.prototype.isLegal = function(newVal) { // 合法性检查
@@ -90,30 +232,12 @@ let selectors = (function() {
         let downBtn = selector.getElementsByClassName('down')[0];
 
         if (type === 'R') {
-            t.rgb[type] = new Selector(255, 0, 255, 1, input, upBtn, downBtn);
+            t.rgb[type] = new Selector('rgb', 255, 0, 255, 1, input, upBtn, downBtn);
         } else {
-            t.rgb[type] = new Selector(0, 0, 255, 1, input, upBtn, downBtn);
+            t.rgb[type] = new Selector('rgb', 0, 0, 255, 1, input, upBtn, downBtn);
         }
-
-        // 事件监听
-        input.onkeydown = ((e) => {
-            input.self.enter(e);
-        });
-        input.onkeyup = (() => {
-            input.self.afterEnter(() => {
-                panelSelector.pickByRGB();
-            });
-        });
-        upBtn.onclick = (() => {
-            upBtn.self.up(() => {
-                panelSelector.pickByRGB();
-            });
-        });
-        downBtn.onclick = (() => {
-            downBtn.self.down(() => {
-                panelSelector.pickByRGB();
-            });
-        });
+        
+        t.rgb[type].addEventListener(); // 事件监听
     }
 
     for (let selector of hslSelectorElements) { // 初始化hsl选择器
@@ -123,32 +247,14 @@ let selectors = (function() {
         let downBtn = selector.getElementsByClassName('down')[0];
 
         if (type === 'H') {
-            t.hsl[type] = new Selector(360, 0, 360, 1, input, upBtn, downBtn);
+            t.hsl[type] = new Selector('hsl', 360, 0, 360, 1, input, upBtn, downBtn);
         } else if (type === 'S') {
-            t.hsl[type] = new Selector(1, 0, 1, 0.01, input, upBtn, downBtn);
+            t.hsl[type] = new Selector('hsl', 1, 0, 1, 0.01, input, upBtn, downBtn);
         } else {
-            t.hsl[type] = new Selector(0.5, 0, 1, 0.01, input, upBtn, downBtn);
+            t.hsl[type] = new Selector('hsl', 0.5, 0, 1, 0.01, input, upBtn, downBtn);
         }
 
-        // 事件监听
-        input.onkeydown = ((e) => {
-            input.self.enter(e);
-        });
-        input.onkeyup = (() => {
-            input.self.afterEnter(() => {
-                panelSelector.pickByHSL();
-            });
-        });
-        upBtn.onclick = (() => {
-            upBtn.self.up(() => {
-                panelSelector.pickByHSL();
-            });
-        });
-        downBtn.onclick = (() => {
-            downBtn.self.down(() => {
-                panelSelector.pickByHSL();
-            });
-        });
+        t.hsl[type].addEventListener(); // 事件监听
     }
 
     return t;
