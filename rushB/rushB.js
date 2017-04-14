@@ -1,11 +1,11 @@
 'use strict';
 
 const DURATION_INITIAL = 1000, // 默认动画执行时间
-    EASING_INITIAL = Math.tween.Quad.easeInOut, // 默认缓动效果
-    FrameTime = 17, // 每一帧的时间，单位ms
-    STATE_INITIAL = 0,
-    STATE_START = 1,
-    STATE_STOP = 2;
+      EASING_INITIAL = Math.tween.Quad.easeInOut, // 默认缓动效果
+      FrameTime = 17, // 每一帧的时间，单位ms
+      STATE_INITIAL = 0,
+      STATE_START = 1,
+      STATE_STOP = 2;
 
 /**
  * 动画类
@@ -16,23 +16,27 @@ let Rush = function(el) {
     this.state = STATE_INITIAL; // 动画状态
     this.taskQuque = []; // 任务队列
     this.index = 0; // 任务标识
-
-    // return this; // 链式调用
 }
 
 /**
  * 添加动画任务
  * @param  {object} props     css属性键值对对象，不需要单位，只支持px，且不支持 margin: 10px 20px 30px 40px 这样的属性缩写，是的就是这么辣鸡
  * @param  {number} duration  动画持续时间，单位ms
- * @param  {function} easing  缓动函数
+ * @param {object} options 定制选项，支持的参数：
+ * {
+ *     before: function() {} // 此动画任务开始前触发的函数（如果有delay，在delay结束后才触发）
+ *     after: function() {} // 此动画任务结束后立即触发的函数
+ *     delay: 200 // 此动画任务开始前的延时
+ *     easing: Math.tween.Quad.easeInOut 缓动函数
+ * }
  */
-Rush.prototype.add = function(props, duration, easing) {
+Rush.prototype.add = function(props, duration, options) {
     let task = {
         props: props,
-        duration: duration || DURATION_INITIAL,
-        easing: easing || EASING_INITIAL,
+        duration: duration,
         currTime: 0, // 动画当前进行到的时间
-        rush: null
+        rush: null,
+        options: options || {}
     }
     this.taskQuque.push(task);
 
@@ -70,6 +74,8 @@ Rush.prototype._runTask = function() {
 
     let props = task.props;
 
+    let newProps = {};
+
     for (let key in props) {
         let beginStyle = getComputedStyle(el).getPropertyValue(key);
 
@@ -80,14 +86,32 @@ Rush.prototype._runTask = function() {
             throw new Error("不支持px以外的属性值设置");
         }
 
-        props[key] = {
+        key = transferStyleName(key); // 将连字符格式转换为驼峰式
+
+        newProps[key] = {
             beginValue,
             toValue
         }
     }
 
-    task.props = props;
-    this._renderFrame(task);
+    task.props = newProps;
+
+    let self = this;
+    // 是否需要延迟
+    task.options.delay
+    ? setTimeout(function() {
+        // 有before回调函数则执行
+        if (task.options.before) {
+            task.options.before();
+        }
+        self._renderFrame(task);
+    }, task.options.delay)
+    : (() => {
+        if (task.options.before) {
+            task.options.before();
+        }
+        this._renderFrame(task);
+    })();
 }
 
 /**
@@ -101,12 +125,13 @@ Rush.prototype._renderFrame = function(task) {
 
     task.animation = function() {
         let currTime = task.currTime; // 记录当前运行时间
+        let easing = task.options.easing ? task.options.easing : EASING_INITIAL; // 设置缓动函数
 
         for (let key in task.props) {
             let beginValue = task.props[key].beginValue, // 初始位置
                 changeValue = task.props[key].toValue - task.props[key].beginValue; // 位置改变量
 
-            let newValue = task.easing(currTime, beginValue, changeValue, duration); // 根据缓动函数计算新的位置
+            let newValue = easing(currTime, beginValue, changeValue, duration); // 根据缓动函数计算新的位置
             self.el.style[key] = newValue + 'px';
         }
 
@@ -117,6 +142,12 @@ Rush.prototype._renderFrame = function(task) {
             for (let key in task.props) {
                 self.el.style[key] = task.props[key].toValue + 'px';
             }
+
+            // 有after回调函数则执行
+            if (task.options.after) {
+                task.options.after();
+            }
+
             // 执行下一个任务
             self._next();
         } else {
@@ -142,15 +173,49 @@ Rush.prototype.done = function() {
     return;
 }
 
+/**
+ * 将连字符的style名转换为驼峰格式
+ * @param {string} style 连字符形式的属性名
+ */
+let transferStyleName = function(style) {
+    if (typeof style !== 'string') {
+        throw new Error(`属性${style}不是字符串`);
+    }
+
+    let arr = style.split('-');
+    if (arr.length > 1) {
+        let newStyle = arr[0];
+        for (let i = 1, name = arr[i]; arr[i++];) {
+            name = name.toLowerCase().replace(/( |^)[a-z]/g, (L) => L.toUpperCase()); // 首字母大写
+            newStyle += name;
+        }
+
+        return newStyle;
+    } else {
+        return style;
+    }
+}
+
 //======================测试========================
 let block1 = document.getElementById('test1');
 
-let rushBlock1 = new Rush(block1);
-rushBlock1.add({
+let rushBlock1 = new Rush(block1).add({
     width: 300,
     height: 100
+}, 600, {
+    before: function() {
+        console.log('rush!');
+    },
+    after: function() {
+        console.log('die!');
+    }
 }).add({
-    margin: 50
-}, 400);
+    'margin-left': 50
+}, 400, {
+    delay: 1000,
+    before: function() {
+        console.log('123');
+    }
+});
 
 rushBlock1.start();
