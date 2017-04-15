@@ -1,11 +1,11 @@
 'use strict';
 
 const DURATION_INITIAL = 1000, // 默认动画执行时间
-      EASING_INITIAL = Math.tween.Quad.easeInOut, // 默认缓动效果
-      FrameTime = 17, // 每一帧的时间，单位ms
-      STATE_INITIAL = 0,
-      STATE_START = 1,
-      STATE_STOP = 2;
+    EASING_INITIAL = Math.tween.Quad.easeInOut, // 默认缓动效果
+    FrameTime = 17, // 每一帧的时间，单位ms
+    STATE_INITIAL = 0,
+    STATE_START = 1,
+    STATE_STOP = 2;
 
 /**
  * 动画类
@@ -35,8 +35,9 @@ Rush.prototype.add = function(props, duration, options) {
         props: props,
         duration: duration,
         currTime: 0, // 动画当前进行到的时间
-        rush: null,
-        options: options || {}
+        options: options || {},
+        rushId: null, // 记录requestAnimationFrame
+        timeoutId: null // 记录setTimeout
     }
     this.taskQuque.push(task);
 
@@ -47,6 +48,7 @@ Rush.prototype.add = function(props, duration, options) {
  * 开始执行动画队列
  */
 Rush.prototype.start = function() {
+    console.log('start!');
     if (this.state === STATE_START) {
         return;
     }
@@ -59,6 +61,73 @@ Rush.prototype.start = function() {
 }
 
 /**
+ * 设置执行动画队列次数
+ * @param {number} n 重复执行的次数，如果不传入则不断重复
+ */
+Rush.prototype.setLoop = function(n) {
+    // 传入参数
+    if (n) {
+        if ((n | 0) === n && n > 0) {
+            this.loop = n;
+        } else {
+            throw new Error('循环次数必须是大于等于0的整数!');
+        }
+    // 不传入参数
+    } else {
+        this.loop = -1;
+    }
+
+
+    return this;
+}
+
+/**
+ * 设置无限循环动画队列，一个更友好的接口
+ */
+Rush.prototype.setLoopForever = function(n) {
+    this.setLoop();
+    return this;
+}
+
+/**
+ * 暂停动画
+ */
+Rush.prototype.pause = function() {
+    if (this.state !== STATE_START) {
+        return;
+    }
+    this.state = STATE_STOP;
+    let task = this.taskQuque[this.index];
+
+    if (task.rushId !== null) {
+        cancelAnimationFrame(task.rushId);
+        task.rushId = null;
+    }
+    if (task.timeoutId !== null) {
+        clearTimeout(task.timeoutId);
+        task.timeoutId = null;
+    }
+
+    return this;
+}
+
+/**
+ * 继续动画
+ */
+Rush.prototype.play = function() {
+    if (this.state !== STATE_STOP) {
+        return;
+    }
+    this.state = STATE_START;
+    let task = this.taskQuque[this.index];
+
+    if (task.rushId === null) {
+        this._renderFrame(task);
+    }
+    return this;
+}
+
+/**
  * 执行单个动画任务
  */
 Rush.prototype._runTask = function() {
@@ -66,7 +135,7 @@ Rush.prototype._runTask = function() {
 
     // 无任务，则动画执行完毕
     if (task === undefined) {
-        this.done();
+        this._done();
         return;
     }
 
@@ -94,19 +163,17 @@ Rush.prototype._runTask = function() {
         }
     }
 
-    task.props = newProps;
+    task.newProps = newProps;
 
     let self = this;
     // 是否需要延迟
-    task.options.delay
-    ? setTimeout(function() {
+    task.options.delay ? task.timeoutId = setTimeout(function() {
         // 有before回调函数则执行
         if (task.options.before) {
             task.options.before();
         }
         self._renderFrame(task);
-    }, task.options.delay)
-    : (() => {
+    }, task.options.delay) : (() => {
         if (task.options.before) {
             task.options.before();
         }
@@ -123,13 +190,16 @@ Rush.prototype._renderFrame = function(task) {
 
     let duration = task.duration;
 
-    task.animation = function() {
+    task.rushId = function() {
+        if (self.state !== STATE_START) {
+            return;
+        }
         let currTime = task.currTime; // 记录当前运行时间
         let easing = task.options.easing ? task.options.easing : EASING_INITIAL; // 设置缓动函数
 
-        for (let key in task.props) {
-            let beginValue = task.props[key].beginValue, // 初始位置
-                changeValue = task.props[key].toValue - task.props[key].beginValue; // 位置改变量
+        for (let key in task.newProps) {
+            let beginValue = task.newProps[key].beginValue, // 初始位置
+                changeValue = task.newProps[key].toValue - task.newProps[key].beginValue; // 位置改变量
 
             let newValue = easing(currTime, beginValue, changeValue, duration); // 根据缓动函数计算新的位置
             self.el.style[key] = newValue + 'px';
@@ -139,8 +209,8 @@ Rush.prototype._renderFrame = function(task) {
 
         if (task.currTime >= task.duration) {
             // 直接定位到末状态
-            for (let key in task.props) {
-                self.el.style[key] = task.props[key].toValue + 'px';
+            for (let key in task.newProps) {
+                self.el.style[key] = task.newProps[key].toValue + 'px';
             }
 
             // 有after回调函数则执行
@@ -151,11 +221,11 @@ Rush.prototype._renderFrame = function(task) {
             // 执行下一个任务
             self._next();
         } else {
-            requestAnimationFrame(task.animation); 
+            requestAnimationFrame(task.rushId);
         }
     };
 
-    requestAnimationFrame(task.animation);
+    requestAnimationFrame(task.rushId);
 }
 
 /**
@@ -166,11 +236,36 @@ Rush.prototype._next = function() {
     this._runTask();
 }
 
-Rush.prototype.done = function() {
-    if (this.state !== STATE_INITIAL) {
-        this.state = STATE_INITIAL;
+/**
+ * 对动画队列进行复位，还原到用add方法添加完任务但还没有用start执行的状态
+ */
+Rush.prototype._reset = function() {
+    this.state = STATE_INITIAL;
+    this.index = 0;
+
+    for (let i = 0, task; task = this.taskQuque[i++];) {
+        task.currTime = 0;
+        task.rushId = null;
+        task.timeoutId = null;
     }
-    return;
+}
+
+/**
+ * 动画队列结束
+ */
+Rush.prototype._done = function() {
+    this._reset();
+
+    while (this.loop === -1) {
+        this.start();
+        return this;
+    }
+
+    if (this.loop && --this.loop) {
+        this.start();
+    }
+
+    return this;
 }
 
 /**
@@ -200,9 +295,8 @@ let transferStyleName = function(style) {
 let block1 = document.getElementById('test1');
 
 let rushBlock1 = new Rush(block1).add({
-    width: 300,
-    height: 100
-}, 600, {
+    'left': 450,
+}, 1000, {
     before: function() {
         console.log('rush!');
     },
@@ -210,12 +304,33 @@ let rushBlock1 = new Rush(block1).add({
         console.log('die!');
     }
 }).add({
-    'margin-left': 50
-}, 400, {
-    delay: 1000,
+    'left': 250,
+    'top': 149
+}, 1200, {
+    before: function() {
+        console.log('123');
+    }
+}).add({
+    'left': 0,
+    'top': 0
+}, 1200, {
     before: function() {
         console.log('123');
     }
 });
 
+rushBlock1.setLoopForever();
+
 rushBlock1.start();
+
+let stopBtn = document.getElementById('stop');
+
+stopBtn.onclick = function() {
+    rushBlock1.pause();
+}
+
+let moveBtn = document.getElementById('move');
+
+moveBtn.onclick = function() {
+    rushBlock1.play();
+}
