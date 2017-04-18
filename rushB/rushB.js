@@ -138,60 +138,7 @@ Rush.prototype._runTask = function() {
         return;
     }
 
-    let el = this.el;
-
-    let props = task.props;
-
-    let newProps = {}; // 保存渲染动画时所需的数据
-
-    const transformProperties = ["translateX", "translateY", "translateZ", "scale", "scaleX", "scaleY", "scaleZ", "skewX", "skewY", "rotateX", "rotateY", "rotateZ"];
-
-    for (let key in props) {
-        let realPropertyName; // 保存真正的属性名
-        let stitching; // 保存字符串拼接方法
-
-        let begin;
-        let end = propertyValueHandler(key, props[key]); // 获得属性数值和单位
-
-        for (let item of transformProperties) {
-            if (item === key) {
-                realPropertyName = 'transform';
-                stitching = function(value) {
-                    return `${key}(${value}${end.unitType})`;
-                }
-                break;
-            } else {
-                realPropertyName = key;
-                stitching = function(value) {
-                    return `${value}${end.unitType}`;
-                }
-            }
-        }
-
-
-        let beginStyle = getComputedStyle(el, null).getPropertyValue(realPropertyName); // 获得初始属性值
-
-        if (beginStyle === 'none') {
-            begin = {
-                num: 0,
-                unitType: end.unitType
-            }
-        } else {
-            begin = propertyValueHandler(key, beginStyle); // 获得属性数值和单位
-        }
-
-        
-        realPropertyName = transferStyleName(realPropertyName); // 将连字符格式转换为驼峰式
-
-        newProps[key] = {
-            begin,
-            end,
-            realPropertyName,
-            stitching
-        }
-    }
-
-    task.newProps = newProps;
+    this._handleProps(task);
 
     let self = this;
     // 是否需要延迟
@@ -207,6 +154,76 @@ Rush.prototype._runTask = function() {
         }
         this._renderFrame(task);
     })();
+}
+
+/**
+ * 对porps属性值处理，获得渲染时所需的数据
+ */
+Rush.prototype._handleProps = function(task) {
+    let el = this.el;
+
+    let props = task.props;
+
+    let newProps = {}; // 保存渲染动画时所需的数据
+
+    // transform 的属性需要特别处理
+    const transformProperties = ["translateX", "translateY", "translateZ", "scale", "scaleX", "scaleY", "scaleZ", "skewX", "skewY", "rotateX", "rotateY", "rotateZ"];
+
+    for (let key in props) {
+        let realPropertyName; // 保存真正的属性名
+
+        let begin;
+        let end = propertyValueHandler(key, props[key]); // 获得属性数值和单位
+
+        let beginValue;
+
+        for (let item of transformProperties) {
+            // 如果是需要特别处理的属性
+            if (item === key) {
+                realPropertyName = 'transform';
+                // 如果已经缓存了transform属性
+                if (el.transformCache) {
+                    if (el.transformCache[key]) {
+                        beginValue = el.transformCache[key].value;
+                    } else {
+                        beginValue = 0;
+                        el.transformCache[key] = {
+                            value: beginValue,
+                            unitType: end.unitType
+                        };
+                    }
+                } else {
+                    // 只有在元素没有在style中定义任何transform属性时才会调用
+                    beginValue = 0;
+
+                    // 给这个元素添加transfromCache属性，用于保存transfrom的各个属性
+                    // 因为如果style中的transform被设置了多个值，读取到的将是"rotate(30deg) translateX(10px)"这样的值，将无法处理
+                    el.transformCache = {};
+                    el.transformCache[key] = {
+                        value: beginValue,
+                        unitType: end.unitType
+                    };
+                }
+                break;
+            } else {
+                // 其他普通属性的处理方法
+                realPropertyName = key;
+                beginValue = getComputedStyle(el, null).getPropertyValue(realPropertyName); // 获得初始属性值
+            }
+        }
+
+        begin = propertyValueHandler(key, beginValue); // 获得属性数值和单位
+
+        realPropertyName = transferStyleName(realPropertyName); // 将连字符格式转换为驼峰式
+
+        newProps[key] = {
+            begin,
+            end,
+            realPropertyName,
+        }
+    }
+
+    task.newProps = newProps;
 }
 
 /**
@@ -231,7 +248,7 @@ Rush.prototype._renderFrame = function(task) {
 
             let newValue = easing(currTime, beginValue, changeValue, duration); // 根据缓动函数计算新的位置
 
-            self.el.style[task.newProps[key].realPropertyName] = task.newProps[key].stitching(newValue);
+            self._setStyle(task, key, newValue);
         }
 
         task.currTime += 17; // 一帧完成，改变动画进行时间
@@ -239,7 +256,7 @@ Rush.prototype._renderFrame = function(task) {
         if (task.currTime >= task.duration) {
             // 直接定位到末状态
             for (let key in task.newProps) {
-                self.el.style[task.newProps[key].realPropertyName] = task.newProps[key].stitching(task.newProps[key].end.num);
+                self._setStyle(task, key, task.newProps[key].end.num);
             }
 
             // 有after回调函数则执行
@@ -255,6 +272,26 @@ Rush.prototype._renderFrame = function(task) {
     };
 
     requestAnimationFrame(task.rushId);
+}
+
+/**
+ * 定位元素位置
+ */
+Rush.prototype._setStyle = function(task, key, newValue) {
+    // 如果是transform 设置style需要特殊处理
+    if (task.newProps[key].realPropertyName === 'transform') {
+        this.el.transformCache[key].value = newValue; // 更新缓存值
+
+        let propertyValue = '';
+
+        for (let key in this.el.transformCache) {
+            propertyValue += `${key}(${this.el.transformCache[key].value}${this.el.transformCache[key].unitType})`;
+        }
+
+        this.el.style[task.newProps[key].realPropertyName] = propertyValue
+    } else {
+        this.el.style[task.newProps[key].realPropertyName] = `${newValue}${task.newProps[key].unitType}`;
+    }
 }
 
 /**
@@ -324,42 +361,41 @@ let transferStyleName = function(style) {
  * 对不同的属性进行处理
  */
 let propertyValueHandler = (function() {
-    let unitType = '', // 用于保存匹配到的单位，如 px
-        num; // 用于保存属性数值
-
     // 此方法能匹配有属性的数值，如果写了单位，还会保存单位
-    let getValueNum = function(property, value) {
-        num = value.toString().replace(/[%A-z]+$/, function(match) {
-            unitType = match; // match即是匹配到的结果
+    let getValueNum = function(propertyName, propertyValue, valueObject) {
+        valueObject.num = propertyValue.toString().replace(/[%A-z]+$/, function(match) {
+            console.log(match);
+            valueObject.unitType = match; // match即是匹配到的结果
 
             return ''; // 匹配到的结果将被替换的值
         });
 
-        num = parseFloat(num);
+        valueObject.num = parseFloat(valueObject.num);
 
-        if (unitType === '') { // 如果没有获取到单位，可能无单位，也可能是省略了单位
-            _getUnitType(property);
+        if (valueObject.unitType === '') { // 如果没有获取到单位，可能无单位，也可能是省略了单位
+            _getUnitType(propertyName, valueObject);
         }
     }
 
     // 此方法依据属性名称来确定属性值单位，允许不写单位进行默认设置
-    let _getUnitType = function(property) {
-        if (/^(rotate|skew)/i.test(property)) {
-            unitType = 'deg'; // 单位是deg的属性
-        } else if (/(^(scale|scaleX|scaleY|scaleZ|opacity|alpha|fillOpacity|flexGrow|flexHeight|zIndex|fontWeight)$)/i.test(property)) {
-            unitType = ''; // 无单位属性
+    let _getUnitType = function(propertyName, valueObject) {
+        if (/^(rotate|skew)/i.test(propertyName)) {
+            valueObject.unitType = 'deg'; // 单位是deg的属性
+        } else if (/(^(scale|scaleX|scaleY|scaleZ|opacity|alpha|fillOpacity|flexGrow|flexHeight|zIndex|fontWeight)$)/i.test(propertyName)) {
+            valueObject.unitType = ''; // 无单位属性
         } else {
-            unitType = 'px'; // 默认就用px
+            valueObject.unitType = 'px'; // 默认就用px
         }
     }
 
-    return function(property, value) {
-        getValueNum(property, value);
-
-        return {
-            unitType,
-            num
+    return function(property, propertyValue) {
+        let valueObject = {
+            num: 0,
+            unitType: ''
         }
+        getValueNum(property, propertyValue, valueObject);
+
+        return valueObject;
     }
 })();
 
@@ -367,7 +403,7 @@ let propertyValueHandler = (function() {
 let block1 = document.getElementById('test1');
 
 let rushBlock1 = new Rush(block1).add({
-    'rotateZ': 120
+    'translateX': 200
 }, 1000, {
     before: function() {
         console.log('rush!');
@@ -380,11 +416,13 @@ let rushBlock1 = new Rush(block1).add({
 }, 1200, {
     before: function() {
         console.log('123');
-    }
-});
+    },
+}).add({
+    'rotateZ': 0,
+    'translateX': 0
+}, 500);
 
 rushBlock1.setLoopForever();
-
 rushBlock1.start();
 
 let stopBtn = document.getElementById('stop');
