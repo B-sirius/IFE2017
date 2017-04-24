@@ -162,25 +162,31 @@ Rush.prototype._runTask = function() {
 Rush.prototype._handleProps = function(task) {
     let el = this.el;
 
-    let props = task.props;
-
-    let newProps = {}; // 保存渲染动画时所需的数据
+    let task.newProps = {}; // 保存渲染动画时所需的数据
 
     // transform 的属性需要特别处理
     const transformProperties = ["translateX", "translateY", "translateZ", "scale", "scaleX", "scaleY", "scaleZ", "skewX", "skewY", "rotateX", "rotateY", "rotateZ"];
 
-    for (let key in props) {
-        let realPropertyName; // 保存真正的属性名
+    const colorProperties = ["color", "background-color", "border-color", "outline-color"];
 
-        let begin;
-        let end = propertyValueHandler(key, props[key]); // 获得属性数值和单位
+    for (let key in task.props) {
+        let realPropertyName; // 真正的属性名
 
-        let beginValue;
+        let styleLogic = 'default'; // 设置dom元素style的方法标记
+
+        let begin; // 初始属性值和单位
+        let end = propertyValueHandler(key, props[key]); // 末属性数值和单位
+
+        // 普通属性的处理方法
+        realPropertyName = key;
+        let beginValue = getComputedStyle(el, null).getPropertyValue(realPropertyName); // 获得初始属性值(带单位)
 
         for (let item of transformProperties) {
-            // 如果是需要特别处理的属性
+            // 如果是transform系的属性
             if (item === key) {
                 realPropertyName = 'transform';
+                styleLogic = 'transform';
+
                 // 如果已经缓存了transform属性
                 if (el.transformCache) {
                     if (el.transformCache[key]) {
@@ -204,26 +210,33 @@ Rush.prototype._handleProps = function(task) {
                         unitType: end.unitType
                     };
                 }
+
                 break;
-            } else {
-                // 其他普通属性的处理方法
-                realPropertyName = key;
-                beginValue = getComputedStyle(el, null).getPropertyValue(realPropertyName); // 获得初始属性值
             }
+        }
+
+        for (let item of colorProperties) {
+            if (styleLogic !== 'default') {
+                break;
+            }
+
+            // 如果是transform系的属性
+            if (item === key) {
+                styleLogic = 'color';
+
+                
         }
 
         begin = propertyValueHandler(key, beginValue); // 获得属性数值和单位
 
         realPropertyName = transferStyleName(realPropertyName); // 将连字符格式转换为驼峰式
 
-        newProps[key] = {
+        task.newProps[key] = {
             begin,
             end,
             realPropertyName,
         }
     }
-
-    task.newProps = newProps;
 }
 
 /**
@@ -277,9 +290,8 @@ Rush.prototype._renderFrame = function(task) {
 /**
  * 定位元素位置
  */
-Rush.prototype._setStyle = function(task, key, newValue) {
-    // 如果是transform 设置style需要特殊处理
-    if (task.newProps[key].realPropertyName === 'transform') {
+Rush._setStyle = {
+    'transform': function(task, key, newValue) {
         this.el.transformCache[key].value = newValue; // 更新缓存值
 
         let propertyValue = '';
@@ -289,7 +301,9 @@ Rush.prototype._setStyle = function(task, key, newValue) {
         }
 
         this.el.style[task.newProps[key].realPropertyName] = propertyValue
-    } else {
+    },
+
+    default: function(task, key, newValue) {
         this.el.style[task.newProps[key].realPropertyName] = `${newValue}${task.newProps[key].unitType}`;
     }
 }
