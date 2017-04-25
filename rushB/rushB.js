@@ -162,7 +162,7 @@ Rush.prototype._runTask = function() {
 Rush.prototype._handleProps = function(task) {
     let el = this.el;
 
-    let task.newProps = {}; // 保存渲染动画时所需的数据
+    task.newProps = {}; // 保存渲染动画时所需的数据
 
     // transform 的属性需要特别处理
     const transformProperties = ["translateX", "translateY", "translateZ", "scale", "scaleX", "scaleY", "scaleZ", "skewX", "skewY", "rotateX", "rotateY", "rotateZ"];
@@ -175,7 +175,7 @@ Rush.prototype._handleProps = function(task) {
         let styleLogic = 'default'; // 设置dom元素style的方法标记
 
         let begin; // 初始属性值和单位
-        let end = propertyValueHandler(key, props[key]); // 末属性数值和单位
+        let end = propertyValueHandler(key, task.props[key]); // 末属性数值和单位
 
         // 普通属性的处理方法
         realPropertyName = key;
@@ -215,29 +215,63 @@ Rush.prototype._handleProps = function(task) {
             }
         }
 
-        for (let item of colorProperties) {
-            if (styleLogic !== 'default') {
-                break;
-            }
+        // for (let item of colorProperties) {
+        //     if (styleLogic !== 'default') {
+        //         break;
+        //     }
 
-            // 如果是transform系的属性
-            if (item === key) {
-                styleLogic = 'color';
+        //     // 如果是transform系的属性
+        //     if (item === key) {
+        //         styleLogic = 'color';
 
-                
-        }
+
+        // }
 
         begin = propertyValueHandler(key, beginValue); // 获得属性数值和单位
 
         realPropertyName = transferStyleName(realPropertyName); // 将连字符格式转换为驼峰式
 
+        // 为task新增属性
         task.newProps[key] = {
             begin,
             end,
             realPropertyName,
+            styleLogic
         }
     }
 }
+
+Rush.prototype.styleHandler = (function() {
+    let t = {
+        'transform': function(task, key, newValue) {
+            this.el.transformCache[key].value = newValue; // 更新缓存值
+
+            let propertyValue = '',
+                propertyName = task.newProps[key].realPropertyName;
+
+            // e.g transform: rotateZ(100deg) translateX(50px)
+            for (let key in this.el.transformCache) {
+                let name = key, // e.g rotateZ
+                    val = this.el.transformCache[key].value, // e.g 100
+                    unitType = this.el.transformCache[key].unitType; // e.g deg
+
+                propertyValue += `${name}(${val}${unitType})`; // e.g rotate(100deg)
+            }
+
+            this.el.style[propertyName] = propertyValue;
+        },
+
+        default: function(task, key, newValue) {
+            this.el.style[task.newProps[key].realPropertyName] = `${newValue}${task.newProps[key].unitType}`;
+        }
+    };
+
+    return function(task, key, newValue) {
+        let styleLogic = task.newProps[key].styleLogic;
+
+        t[styleLogic].call(this, task, key, newValue);
+    };
+})();
 
 /**
  * 具体渲染过程
@@ -261,7 +295,8 @@ Rush.prototype._renderFrame = function(task) {
 
             let newValue = easing(currTime, beginValue, changeValue, duration); // 根据缓动函数计算新的位置
 
-            self._setStyle(task, key, newValue);
+            // 更新style
+            self.styleHandler(task, key, newValue);
         }
 
         task.currTime += 17; // 一帧完成，改变动画进行时间
@@ -269,7 +304,7 @@ Rush.prototype._renderFrame = function(task) {
         if (task.currTime >= task.duration) {
             // 直接定位到末状态
             for (let key in task.newProps) {
-                self._setStyle(task, key, task.newProps[key].end.num);
+                self.styleHandler(task, key, task.newProps[key].end.num);
             }
 
             // 有after回调函数则执行
@@ -285,27 +320,6 @@ Rush.prototype._renderFrame = function(task) {
     };
 
     requestAnimationFrame(task.rushId);
-}
-
-/**
- * 定位元素位置
- */
-Rush._setStyle = {
-    'transform': function(task, key, newValue) {
-        this.el.transformCache[key].value = newValue; // 更新缓存值
-
-        let propertyValue = '';
-
-        for (let key in this.el.transformCache) {
-            propertyValue += `${key}(${this.el.transformCache[key].value}${this.el.transformCache[key].unitType})`;
-        }
-
-        this.el.style[task.newProps[key].realPropertyName] = propertyValue
-    },
-
-    default: function(task, key, newValue) {
-        this.el.style[task.newProps[key].realPropertyName] = `${newValue}${task.newProps[key].unitType}`;
-    }
 }
 
 /**
@@ -351,6 +365,7 @@ Rush.prototype._done = function() {
 /**
  * 将连字符的style名转换为驼峰格式
  * @param {string} style 连字符形式的属性名
+ * e.g max-width
  */
 let transferStyleName = function(style) {
     if (typeof style !== 'string') {
@@ -375,8 +390,13 @@ let transferStyleName = function(style) {
  * 对不同的属性进行处理
  */
 let propertyValueHandler = (function() {
-    // 此方法能匹配有属性的数值，如果写了单位，还会保存单位
-    let getValueNum = function(propertyName, propertyValue, valueObject) {
+    /**
+     * 获得属性值的数值
+     * @param  {[type]} propertyName  传入的参数 e.g rotateZ
+     * @param  {[type]} propertyValue 传入的属性值 e.g 100deg
+     * @param  {[type]} valueObject   属性值对象 e.g {num: 100, unitType: deg}
+     */
+    let _getValueNum = function(propertyName, propertyValue, valueObject) {
         valueObject.num = propertyValue.toString().replace(/[%A-z]+$/, function(match) {
             console.log(match);
             valueObject.unitType = match; // match即是匹配到的结果
@@ -386,12 +406,14 @@ let propertyValueHandler = (function() {
 
         valueObject.num = parseFloat(valueObject.num);
 
-        if (valueObject.unitType === '') { // 如果没有获取到单位，可能无单位，也可能是省略了单位
-            _getUnitType(propertyName, valueObject);
-        }
+
     }
 
-    // 此方法依据属性名称来确定属性值单位，允许不写单位进行默认设置
+    /**
+     * 依据属性名称来确定属性值单位，允许不写单位进行默认设置
+     * @param  {[type]} propertyName 属性名
+     * @param  {[type]} valueObject  属性值对象
+     */
     let _getUnitType = function(propertyName, valueObject) {
         if (/^(rotate|skew)/i.test(propertyName)) {
             valueObject.unitType = 'deg'; // 单位是deg的属性
@@ -402,12 +424,18 @@ let propertyValueHandler = (function() {
         }
     }
 
-    return function(property, propertyValue) {
+    return function(propertyName, propertyValue) {
         let valueObject = {
             num: 0,
             unitType: ''
         }
-        getValueNum(property, propertyValue, valueObject);
+
+        _getValueNum(propertyName, propertyValue, valueObject);
+
+        // 如果没有获取到单位，可能无单位，也可能是省略了单位
+        if (valueObject.unitType === '') {
+            _getUnitType(propertyName, valueObject);
+        }
 
         return valueObject;
     }
