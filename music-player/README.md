@@ -3,7 +3,8 @@
 > html5音乐模放器
 
 使用了易源API来获得音乐相关数据
-demo: music.b-sirius.me
+
+demo: http://music.b-sirius.me
 
 ## Build Setup
 
