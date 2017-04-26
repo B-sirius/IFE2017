@@ -159,73 +159,26 @@ Rush.prototype._runTask = function() {
 /**
  * 对porps属性值处理，获得渲染时所需的数据
  */
-Rush.prototype._handleProps = function(task) {
-    let el = this.el;
-
-    task.newProps = {}; // 保存渲染动画时所需的数据
-
+Rush.prototype._handleProps = (function() {
     // transform 的属性需要特别处理
     const transformProperties = ["translateX", "translateY", "translateZ", "scale", "scaleX", "scaleY", "scaleZ", "skewX", "skewY", "rotateX", "rotateY", "rotateZ"];
 
+    // color 的属性需要特别处理
     const colorProperties = ["color", "background-color", "border-color", "outline-color"];
 
-    for (let key in task.props) {
-        let realPropertyName; // 真正的属性名
+    let propertyHandler = {};
 
-        let styleLogic = 'default'; // 设置dom元素style的方法标记
+    // 普通属性的处理方法
+    propertyHandler['default'] = function(task, key) {
+        let el = this.el;
 
         let begin; // 初始属性值和单位
         let end = propertyValueHandler(key, task.props[key]); // 末属性数值和单位
 
-        // 普通属性的处理方法
-        realPropertyName = key;
+        let realPropertyName = key; // 真正的属性名
+        let styleLogic = 'default';
+
         let beginValue = getComputedStyle(el, null).getPropertyValue(realPropertyName); // 获得初始属性值(带单位)
-
-        for (let item of transformProperties) {
-            // 如果是transform系的属性
-            if (item === key) {
-                realPropertyName = 'transform';
-                styleLogic = 'transform';
-
-                // 如果已经缓存了transform属性
-                if (el.transformCache) {
-                    if (el.transformCache[key]) {
-                        beginValue = el.transformCache[key].value;
-                    } else {
-                        beginValue = 0;
-                        el.transformCache[key] = {
-                            value: beginValue,
-                            unitType: end.unitType
-                        };
-                    }
-                } else {
-                    // 只有在元素没有在style中定义任何transform属性时才会调用
-                    beginValue = 0;
-
-                    // 给这个元素添加transfromCache属性，用于保存transfrom的各个属性
-                    // 因为如果style中的transform被设置了多个值，读取到的将是"rotate(30deg) translateX(10px)"这样的值，将无法处理
-                    el.transformCache = {};
-                    el.transformCache[key] = {
-                        value: beginValue,
-                        unitType: end.unitType
-                    };
-                }
-
-                break;
-            }
-        }
-
-        // for (let item of colorProperties) {
-        //     if (styleLogic !== 'default') {
-        //         break;
-        //     }
-
-        //     // 如果是transform系的属性
-        //     if (item === key) {
-        //         styleLogic = 'color';
-
-
-        // }
 
         begin = propertyValueHandler(key, beginValue); // 获得属性数值和单位
 
@@ -239,7 +192,70 @@ Rush.prototype._handleProps = function(task) {
             styleLogic
         }
     }
-}
+
+    // transform属性的处理方法
+    for (let propertyName of transformProperties) {
+        propertyHandler[propertyName] = function(task, key) {
+            let el = this.el;
+
+            let begin; // 初始属性值和单位
+            let end = propertyValueHandler(key, task.props[key]); // 末属性数值和单位
+
+            let realPropertyName = 'transform';
+            let styleLogic = 'transform';
+
+            let beginValue; // 初始属性值（带单位）
+
+            // 如果已经缓存了transform属性
+            if (el.transformCache) {
+                if (el.transformCache[key]) {
+                    beginValue = el.transformCache[key].value;
+                } else {
+                    beginValue = 0;
+                    el.transformCache[key] = {
+                        value: beginValue,
+                        unitType: end.unitType
+                    };
+                }
+            } else {
+                // 只有在元素没有在style中定义任何transform属性时才会调用
+                beginValue = 0;
+
+                // 给这个元素添加transfromCache属性，用于保存transfrom的各个属性
+                // 因为如果style中的transform被设置了多个值，读取到的将是"rotate(30deg) translateX(10px)"这样的值，将无法处理
+                el.transformCache = {};
+                el.transformCache[key] = {
+                    value: beginValue,
+                    unitType: end.unitType
+                };
+            }
+
+            begin = propertyValueHandler(key, beginValue); // 获得属性数值和单位
+
+            // 为task新增属性
+            task.newProps[key] = {
+                begin,
+                end,
+                realPropertyName,
+                styleLogic
+            }
+        }
+    }
+
+    return function(task) {
+        let el = this.el;
+
+        task.newProps = {}; // 保存渲染动画时所需的数据
+
+        for (let key in task.props) {
+            if (propertyHandler[key]) { // 特殊属性
+                propertyHandler[key].call(this, task, key);
+            } else { // 普通属性
+                propertyHandler['default'].call(this, task, key);
+            }
+        }
+    }
+})();
 
 Rush.prototype.styleHandler = (function() {
     let t = {
@@ -397,8 +413,8 @@ let propertyValueHandler = (function() {
      * @param  {[type]} valueObject   属性值对象 e.g {num: 100, unitType: deg}
      */
     let _getValueNum = function(propertyName, propertyValue, valueObject) {
+        console.log(propertyValue);
         valueObject.num = propertyValue.toString().replace(/[%A-z]+$/, function(match) {
-            console.log(match);
             valueObject.unitType = match; // match即是匹配到的结果
 
             return ''; // 匹配到的结果将被替换的值
@@ -446,20 +462,9 @@ let block1 = document.getElementById('test1');
 
 let rushBlock1 = new Rush(block1).add({
     'translateX': 200
-}, 1000, {
-    before: function() {
-        console.log('rush!');
-    },
-    after: function() {
-        console.log('die!');
-    }
-}).add({
+}, 1000, {}).add({
     'rotateZ': 240
-}, 1200, {
-    before: function() {
-        console.log('123');
-    },
-}).add({
+}, 1200, {}).add({
     'rotateZ': 0,
     'translateX': 0
 }, 500);
