@@ -11,7 +11,7 @@ const DURATION_INITIAL = 1000, // 默认动画执行时间
  * 动画类
  * @param  {dom} el       进行动画的dom对象
  */
-let Rush = function(el) {
+var Rush = function(el) {
     this.el = el;
     this.state = STATE_INITIAL; // 动画状态
     this.taskQuque = []; // 任务队列
@@ -31,7 +31,7 @@ let Rush = function(el) {
  * }
  */
 Rush.prototype.add = function(props, duration, options) {
-    let task = {
+    var task = {
         props: props,
         duration: duration,
         currTime: 0, // 动画当前进行到的时间
@@ -96,7 +96,7 @@ Rush.prototype.pause = function() {
         return;
     }
     this.state = STATE_STOP;
-    let task = this.taskQuque[this.index];
+    var task = this.taskQuque[this.index];
 
     if (task.rushId !== null) {
         cancelAnimationFrame(task.rushId);
@@ -118,7 +118,7 @@ Rush.prototype.play = function() {
         return;
     }
     this.state = STATE_START;
-    let task = this.taskQuque[this.index];
+    var task = this.taskQuque[this.index];
 
     if (task.rushId === null) {
         this._renderFrame(task);
@@ -130,7 +130,7 @@ Rush.prototype.play = function() {
  * 执行单个动画任务
  */
 Rush.prototype._runTask = function() {
-    let task = this.taskQuque[this.index];
+    var task = this.taskQuque[this.index];
 
     // 无任务，则动画执行完毕
     if (task === undefined) {
@@ -140,7 +140,7 @@ Rush.prototype._runTask = function() {
 
     this._handleProps(task);
 
-    let self = this;
+    var self = this;
     // 是否需要延迟
     task.options.delay ? task.timeoutId = setTimeout(function() {
         // 有before回调函数则执行
@@ -166,19 +166,19 @@ Rush.prototype._handleProps = (function() {
     // color 的属性需要特别处理
     const colorProperties = ["color", "background-color", "border-color", "outline-color"];
 
-    let propertyHandler = {};
+    var propertyHandler = {};
 
     // 普通属性的处理方法
     propertyHandler['default'] = function(task, key) {
-        let el = this.el;
+        var el = this.el;
 
-        let begin; // 初始属性值和单位
-        let end = propertyValueHandler(key, task.props[key]); // 末属性数值和单位
+        var begin; // 初始属性值和单位
+        var end = propertyValueHandler(key, task.props[key]); // 末属性数值和单位
 
-        let realPropertyName = key; // 真正的属性名
-        let styleLogic = 'default';
+        var realPropertyName = key; // 真正的属性名
+        var styleLogic = 'default';
 
-        let beginValue = getComputedStyle(el, null).getPropertyValue(realPropertyName); // 获得初始属性值(带单位)
+        var beginValue = getComputedStyle(el, null).getPropertyValue(realPropertyName); // 获得初始属性值(带单位)
 
         begin = propertyValueHandler(key, beginValue); // 获得属性数值和单位
 
@@ -194,17 +194,17 @@ Rush.prototype._handleProps = (function() {
     }
 
     // transform属性的处理方法
-    for (let propertyName of transformProperties) {
+    for (var propertyName of transformProperties) {
         propertyHandler[propertyName] = function(task, key) {
-            let el = this.el;
+            var el = this.el;
 
-            let begin; // 初始属性值和单位
-            let end = propertyValueHandler(key, task.props[key]); // 末属性数值和单位
+            var begin; // 初始属性值和单位
+            var end = propertyValueHandler(key, task.props[key]); // 末属性数值和单位
 
-            let realPropertyName = 'transform';
-            let styleLogic = 'transform';
+            var realPropertyName = 'transform';
+            var styleLogic = 'transform';
 
-            let beginValue; // 初始属性值（带单位）
+            var beginValue; // 初始属性值（带单位）
 
             // 如果已经缓存了transform属性
             if (el.transformCache) {
@@ -243,18 +243,22 @@ Rush.prototype._handleProps = (function() {
     }
 
     // color属性的处理方法，统一转换为rgba来处理
-    for (let propertyName of colorProperties) {
+    for (var propertyName of colorProperties) {
         propertyHandler[propertyName] = function(task, key) {
-            let el = this.el;
+            var el = this.el;
 
-            let begin;
-            let end = normalize2rgba(task.props[key]);
+            var begin;
+            var end = normalize2rgba(task.props[key]);
 
-            let beginValue = getComputedStyle(el, null).getPropertyValue(realPropertyName); // e.g. rgba(255, 255, 255, 1);
+            var realPropertyName = key;
+
+            var beginValue = getComputedStyle(el, null).getPropertyValue(realPropertyName); // e.g. rgba(255, 255, 255, 1);
             begin = normalize2rgba(beginValue); // 返回的是转换后的rgba对象
 
-            let realPropertyName = key;
-            let styleLogic = 'rgba';
+            var styleLogic = 'rgba';
+
+            realPropertyName = transferStyleName(realPropertyName); // 将连字符格式转换为驼峰式
+
 
             task.newProps[key] = {
                 begin,
@@ -266,11 +270,11 @@ Rush.prototype._handleProps = (function() {
     }
 
     return function(task) {
-        let el = this.el;
+        var el = this.el;
 
         task.newProps = {}; // 保存渲染动画时所需的数据
 
-        for (let key in task.props) {
+        for (var key in task.props) {
             if (propertyHandler[key]) { // 特殊属性
                 propertyHandler[key].call(this, task, key);
             } else { // 普通属性
@@ -281,16 +285,16 @@ Rush.prototype._handleProps = (function() {
 })();
 
 Rush.prototype.styleHandler = (function() {
-    let t = {
+    var t = {
         'transform': function(task, key, newValue) {
             this.el.transformCache[key].value = newValue; // 更新缓存值
 
-            let propertyValue = '',
+            var propertyValue = '',
                 propertyName = task.newProps[key].realPropertyName;
 
             // e.g transform: rotateZ(100deg) translateX(50px)
-            for (let key in this.el.transformCache) {
-                let name = key, // e.g rotateZ
+            for (var key in this.el.transformCache) {
+                var name = key, // e.g rotateZ
                     val = this.el.transformCache[key].value, // e.g 100
                     unitType = this.el.transformCache[key].unitType; // e.g deg
 
@@ -300,13 +304,24 @@ Rush.prototype.styleHandler = (function() {
             this.el.style[propertyName] = propertyValue;
         },
 
-        default: function(task, key, newValue) {
-            this.el.style[task.newProps[key].realPropertyName] = `${newValue}${task.newProps[key].unitType}`;
+        'rgba': function(task, key, newArr) {
+            var text = 'rgba(';
+
+            for (var i = 0; i < newArr.length - 1; i++) {
+                text += (newArr[i]).toFixed() + ', ';
+            }
+            text += newArr[newArr.length - 1].toFixed(2) + ')';
+
+            this.el.style[task.newProps[key].realPropertyName] = text;
+        },
+
+        'default': function(task, key, newValue) {
+            this.el.style[task.newProps[key].realPropertyName] = `${newValue}${task.newProps[key].end.unitType}`;
         }
     };
 
     return function(task, key, newValue) {
-        let styleLogic = task.newProps[key].styleLogic;
+        var styleLogic = task.newProps[key].styleLogic;
 
         t[styleLogic].call(this, task, key, newValue);
     };
@@ -317,32 +332,47 @@ Rush.prototype.styleHandler = (function() {
  * @param  {object} task 任务对象
  */
 Rush.prototype._renderFrame = function(task) {
-    let self = this;
+    var self = this;
 
-    let duration = task.duration;
+    var duration = task.duration;
 
     task.rushId = function() {
         if (self.state !== STATE_START) {
             return;
         }
-        let currTime = task.currTime; // 记录当前运行时间
-        let easing = task.options.easing ? task.options.easing : EASING_INITIAL; // 设置缓动函数
+        var currTime = task.currTime; // 记录当前运行时间
+        var easing = task.options.easing ? task.options.easing : EASING_INITIAL; // 设置缓动函数
 
-        for (let key in task.newProps) {
-            let beginValue = task.newProps[key].begin.num, // 初始位置
-                changeValue = task.newProps[key].end.num - beginValue; // 位置改变量
+        for (var key in task.newProps) {
+            if (typeof task.newProps[key].begin.num !== 'number') {
+                var beginArr = task.newProps[key].begin.num;
+                var endArr = task.newProps[key].end.num;
 
-            let newValue = easing(currTime, beginValue, changeValue, duration); // 根据缓动函数计算新的位置
+                var newArr = [];
+                for (var i = 0; i < beginArr.length; i++) {
+                    var beginValue = beginArr[i],
+                        changeValue = endArr[i] - beginValue,
+                        newValue = easing(currTime, beginValue, changeValue, duration); // 根据缓动函数计算新的位置
+                        newArr.push(newValue);
+                };
 
-            // 更新style
-            self.styleHandler(task, key, newValue);
+                self.styleHandler(task, key, newArr);
+            } else {
+                var beginValue = task.newProps[key].begin.num, // 初始位置
+                    changeValue = task.newProps[key].end.num - beginValue; // 位置改变量
+
+                var newValue = easing(currTime, beginValue, changeValue, duration); // 根据缓动函数计算新的位置
+
+                // 更新style
+                self.styleHandler(task, key, newValue);
+            }
         }
 
         task.currTime += 17; // 一帧完成，改变动画进行时间
 
         if (task.currTime >= task.duration) {
             // 直接定位到末状态
-            for (let key in task.newProps) {
+            for (var key in task.newProps) {
                 self.styleHandler(task, key, task.newProps[key].end.num);
             }
 
@@ -376,7 +406,7 @@ Rush.prototype._reset = function() {
     this.state = STATE_INITIAL;
     this.index = 0;
 
-    for (let i = 0, task; task = this.taskQuque[i++];) {
+    for (var i = 0, task; task = this.taskQuque[i++];) {
         task.currTime = 0;
         task.rushId = null;
         task.timeoutId = null;
@@ -406,15 +436,15 @@ Rush.prototype._done = function() {
  * @param {string} style 连字符形式的属性名
  * e.g max-width
  */
-let transferStyleName = function(style) {
+var transferStyleName = function(style) {
     if (typeof style !== 'string') {
         throw new Error(`属性${style}不是字符串`);
     }
 
-    let arr = style.split('-');
+    var arr = style.split('-');
     if (arr.length > 1) {
-        let newStyle = arr[0];
-        for (let i = 1, name = arr[i]; arr[i++];) {
+        var newStyle = arr[0];
+        for (var i = 1, name = arr[i]; arr[i++];) {
             name = name.toLowerCase().replace(/( |^)[a-z]/g, (L) => L.toUpperCase()); // 首字母大写
             newStyle += name;
         }
@@ -428,14 +458,14 @@ let transferStyleName = function(style) {
 /**
  * 对不同的属性进行处理
  */
-let propertyValueHandler = (function() {
+var propertyValueHandler = (function() {
     /**
      * 获得属性值的数值
      * @param  {[type]} propertyName  传入的参数 e.g rotateZ
      * @param  {[type]} propertyValue 传入的属性值 e.g 100deg
      * @param  {[type]} valueObject   属性值对象 e.g {num: 100, unitType: deg}
      */
-    let _getValueNum = function(propertyName, propertyValue, valueObject) {
+    var _getValueNum = function(propertyName, propertyValue, valueObject) {
         console.log(propertyValue);
         valueObject.num = propertyValue.toString().replace(/[%A-z]+$/, function(match) {
             valueObject.unitType = match; // match即是匹配到的结果
@@ -453,7 +483,7 @@ let propertyValueHandler = (function() {
      * @param  {[type]} propertyName 属性名
      * @param  {[type]} valueObject  属性值对象
      */
-    let _getUnitType = function(propertyName, valueObject) {
+    var _getUnitType = function(propertyName, valueObject) {
         if (/^(rotate|skew)/i.test(propertyName)) {
             valueObject.unitType = 'deg'; // 单位是deg的属性
         } else if (/(^(scale|scaleX|scaleY|scaleZ|opacity|alpha|fillOpacity|flexGrow|flexHeight|zIndex|fontWeight)$)/i.test(propertyName)) {
@@ -464,7 +494,7 @@ let propertyValueHandler = (function() {
     }
 
     return function(propertyName, propertyValue) {
-        let valueObject = {
+        var valueObject = {
             num: 0,
             unitType: ''
         }
@@ -484,28 +514,28 @@ let propertyValueHandler = (function() {
  * 将各种颜色值都转换成rgba，暂不考虑十六进制色
  * @param {string} color 颜色字符串 e.g. rgb(1, 2, 3)
  */
-let normalize2rgba = function(color) {
-    let colorObj;
-    let colorType = /([a-z])+/.exec(color);
+var normalize2rgba = function(color) {
+    var colorObj;
+    var colorType = /([a-z])+/.exec(color)[0];
 
     if (colorType === 'rgb') {
-        let result = /rgb\(([0-9]+), ?([0-9]+), ?([0-9]+)\)/.exec(color);
+        var result = /rgb\(([0-9]+), ?([0-9]+), ?([0-9]+)\)/.exec(color);
 
-        let valueArr = [parseFloat(result[1]), parseFloat(result[2]), parseFloat(result[3])];
-
-        colorObj = {
-            type: 'rgb',
-            value: valueArr
-        }
-    } else if (colorType === 'rgba') {} {
-        let result = /rgba\(([0-9]+), ?([0-9]+), ?([0-9]+), ?([0-9]+)\)/.exec(color);
-
-        let valueArr = [parseFloat(result[1]), parseFloat(result[2]), parseFloat(result[3]), parseFloat(result[4])];
+        var valueArr = [parseFloat(result[1]), parseFloat(result[2]), parseFloat(result[3]), 1];
 
         colorObj = {
             type: 'rgba',
-            value: valueArr
-        }
+            num: valueArr
+        };
+    } else if (colorType === 'rgba') {
+        var result = /rgba\(([0-9]+), ?([0-9]+), ?([0-9]+), ?(0\.[0-9]+)\)/.exec(color);
+
+        var valueArr = [parseFloat(result[1]), parseFloat(result[2]), parseFloat(result[3]), parseFloat(result[4])];
+
+        colorObj = {
+            type: 'rgba',
+            num: valueArr
+        };
     } else {
         throw new Error(color + '不是支持的颜色类型！');
     }
@@ -514,27 +544,31 @@ let normalize2rgba = function(color) {
 }
 
 //======================测试========================
-let block1 = document.getElementById('test1');
+var block1 = document.getElementById('test1');
 
-let rushBlock1 = new Rush(block1).add({
-    'translateX': 200
-}, 1000, {}).add({
+var rushBlock1 = new Rush(block1).add({
+    'width': 600,
+    'translateX': 200,
+    'background-color': 'rgb(181, 79, 232)'
+}, 1000).add({
     'rotateZ': 240
-}, 1200, {}).add({
+}, 800).add({
+    'width': 150,
     'rotateZ': 0,
-    'translateX': 0
+    'translateX': 0,
+    'background-color': 'rgb(255, 150, 69)'
 }, 500);
 
 rushBlock1.setLoopForever();
 rushBlock1.start();
 
-let stopBtn = document.getElementById('stop');
+var stopBtn = document.getElementById('stop');
 
 stopBtn.onclick = function() {
     rushBlock1.pause();
 }
 
-let moveBtn = document.getElementById('move');
+var moveBtn = document.getElementById('move');
 
 moveBtn.onclick = function() {
     rushBlock1.play();
