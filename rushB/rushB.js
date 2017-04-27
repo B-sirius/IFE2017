@@ -242,6 +242,29 @@ Rush.prototype._handleProps = (function() {
         }
     }
 
+    // color属性的处理方法，统一转换为rgba来处理
+    for (let propertyName of colorProperties) {
+        propertyHandler[propertyName] = function(task, key) {
+            let el = this.el;
+
+            let begin;
+            let end = normalize2rgba(task.props[key]);
+
+            let beginValue = getComputedStyle(el, null).getPropertyValue(realPropertyName); // e.g. rgba(255, 255, 255, 1);
+            begin = normalize2rgba(beginValue); // 返回的是转换后的rgba对象
+
+            let realPropertyName = key;
+            let styleLogic = 'rgba';
+
+            task.newProps[key] = {
+                begin,
+                end,
+                realPropertyName,
+                styleLogic
+            }
+        }
+    }
+
     return function(task) {
         let el = this.el;
 
@@ -456,6 +479,39 @@ let propertyValueHandler = (function() {
         return valueObject;
     }
 })();
+
+/**
+ * 将各种颜色值都转换成rgba，暂不考虑十六进制色
+ * @param {string} color 颜色字符串 e.g. rgb(1, 2, 3)
+ */
+let normalize2rgba = function(color) {
+    let colorObj;
+    let colorType = /([a-z])+/.exec(color);
+
+    if (colorType === 'rgb') {
+        let result = /rgb\(([0-9]+), ?([0-9]+), ?([0-9]+)\)/.exec(color);
+
+        let valueArr = [parseFloat(result[1]), parseFloat(result[2]), parseFloat(result[3])];
+
+        colorObj = {
+            type: 'rgb',
+            value: valueArr
+        }
+    } else if (colorType === 'rgba') {} {
+        let result = /rgba\(([0-9]+), ?([0-9]+), ?([0-9]+), ?([0-9]+)\)/.exec(color);
+
+        let valueArr = [parseFloat(result[1]), parseFloat(result[2]), parseFloat(result[3]), parseFloat(result[4])];
+
+        colorObj = {
+            type: 'rgba',
+            value: valueArr
+        }
+    } else {
+        throw new Error(color + '不是支持的颜色类型！');
+    }
+
+    return colorObj;
+}
 
 //======================测试========================
 let block1 = document.getElementById('test1');
