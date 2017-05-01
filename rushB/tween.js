@@ -6,7 +6,7 @@
  * d: duration（持续时间）。
  * you can visit 'http://easings.net/zh-cn' to get effect
  */
-let Tween = {
+var Tween = {
     Linear: function(t, b, c, d) {
         return c * t / d + b; },
     Quad: {
@@ -96,7 +96,7 @@ let Tween = {
     },
     Elastic: {
         easeIn: function(t, b, c, d, a, p) {
-            let s;
+            var s;
             if (t == 0) return b;
             if ((t /= d) == 1) return b + c;
             if (typeof p == "undefined") p = d * .3;
@@ -109,7 +109,7 @@ let Tween = {
             return -(a * Math.pow(2, 10 * (t -= 1)) * Math.sin((t * d - s) * (2 * Math.PI) / p)) + b;
         },
         easeOut: function(t, b, c, d, a, p) {
-            let s;
+            var s;
             if (t == 0) return b;
             if ((t /= d) == 1) return b + c;
             if (typeof p == "undefined") p = d * .3;
@@ -122,7 +122,7 @@ let Tween = {
             return (a * Math.pow(2, -10 * t) * Math.sin((t * d - s) * (2 * Math.PI) / p) + c + b);
         },
         easeInOut: function(t, b, c, d, a, p) {
-            let s;
+            var s;
             if (t == 0) return b;
             if ((t /= d / 2) == 2) return b + c;
             if (typeof p == "undefined") p = d * (.3 * 1.5);
