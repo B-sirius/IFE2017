@@ -28,16 +28,17 @@ var Rush = function(el) {
  *     after: function() {} // 此动画任务结束后立即触发的函数
  *     delay: 200 // 此动画任务开始前的延时
  *     easing: Math.tween.Quad.easeInOut 缓动函数
+ *     display: 'block' task结束后元素的display
  * }
  */
 Rush.prototype.add = function(props, duration, options) {
     var task = {
         props: props,
         duration: duration,
+        options: options || {},
         startTime: null, // 动画开始的绝对时间
         currTime: null, // 动画进行到的绝对时间
         lastTime: 0, // 动画持续到的时间
-        options: options || {},
         rushId: null, // 记录requestAnimationFrame
         timeoutId: null // 记录setTimeout
     }
@@ -77,7 +78,6 @@ Rush.prototype.setLoop = function(n) {
     } else {
         this.loop = -1;
     }
-
 
     return this;
 }
@@ -140,6 +140,11 @@ Rush.prototype._runTask = function() {
         return;
     }
 
+    // 如果task是预定义命令
+    if (typeof task.props === 'string') {
+        this._easyTask(task);
+    }
+
     this._handleProps(task);
 
     var self = this;
@@ -157,6 +162,77 @@ Rush.prototype._runTask = function() {
         this._renderFrame(task);
     })();
 }
+
+/**
+ * 将预定义好的常用动画指令，处理成标准指令
+ * @param object task 要处理的指令
+ */
+Rush.prototype._easyTask = (function() {
+    var easyTaskHandler = {
+        // 收起
+        'slideUp': function(task) {
+            // 保存收起元素之前的元素高度，这样在展开时才能知道元素原本的高度
+            this.el.slideCache = {
+                height: getComputedStyle(this.el, null).getPropertyValue('height'),
+                display: getComputedStyle(this.el, null).getPropertyValue('display')
+            },
+
+            // 定义真正的task
+            task.props = {
+                height: 0
+            }
+
+            // 收起后，元素的display将被设为none
+            task.options.display = 'none';
+        },
+
+        // 展开
+        'slideDown': function(task) {
+            if (this.el.slideCache) {
+                // 设置为收起前的状态
+                task.props = {
+                    height: this.el.slideCache.height,
+                }
+
+                // 进行动画之前先将display重新设置
+                this.el.style.display = this.el.slideCache.display;
+            }
+        },
+
+        // 淡出
+        'fadeOut': function(task) {
+            this.el.fadeCache = {
+                opacity: getComputedStyle(this.el, null).getPropertyValue('opacity'),
+                display: getComputedStyle(this.el, null).getPropertyValue('display')
+            }
+
+            // 定义真正的task
+            task.props = {
+                opacity: 0
+            }
+
+            // 淡出后，元素的display将被设为none
+            task.options.display = 'none';
+        },
+
+        // 展开
+        'fadeIn': function(task) {
+            if (this.el.fadeCache) {
+                // 设置为收起前的状态
+                task.props = {
+                    opacity: this.el.fadeCache.opacity,
+                }
+
+                // 进行动画之前先将display重新设置
+                this.el.style.display = this.el.fadeCache.display;
+            }
+        },
+    }
+
+    return function(task) {
+        easyTaskHandler[task.props].call(this, task);
+    }
+})();
 
 /**
  * 对porps属性值处理，获得渲染时所需的数据
@@ -297,10 +373,10 @@ Rush.prototype.styleHandler = (function() {
             // e.g transform: rotateZ(100deg) translateX(50px)
             for (var key in this.el.transformCache) {
                 var name = key, // e.g rotateZ
-                    val = this.el.transformCache[key].value, // e.g 100
-                    unitType = this.el.transformCache[key].unitType; // e.g deg
+                    val = this.el.transformCache[key].value, // e.g. 100
+                    unitType = this.el.transformCache[key].unitType; // e.g. deg
 
-                propertyValue += `${name}(${val}${unitType})`; // e.g rotate(100deg)
+                propertyValue += `${name}(${val}${unitType})`; // e.g. rotate(100deg)
             }
 
             this.el.style[propertyName] = propertyValue;
@@ -368,6 +444,8 @@ Rush.prototype._renderFrame = function(task) {
                     changeValue = task.newProps[key].end.num - beginValue; // 位置改变量
 
                 var newValue = easing(task.lastTime, beginValue, changeValue, duration); // 根据缓动函数计算新的位置
+                console.log(newValue);
+
 
                 // 更新style
                 self.styleHandler(task, key, newValue);
@@ -378,6 +456,11 @@ Rush.prototype._renderFrame = function(task) {
             // 直接定位到末状态
             for (var key in task.newProps) {
                 self.styleHandler(task, key, task.newProps[key].end.num);
+            }
+
+            // 如果设置了display则设置
+            if (task.options.display) {
+                self.el.style.display = task.options.display;
             }
 
             // 有after回调函数则执行
@@ -520,141 +603,144 @@ var propertyValueHandler = (function() {
  * @param {string} color 颜色字符串 e.g. rgb(1, 2, 3)
  */
 var normalize2rgba = (function() {
-            // 十六进制颜色的正则表达式
-            const reg = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+    // 十六进制颜色的正则表达式
+    const reg = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 
-            var hsl2rgba = function(h, s, l) {
-                h /= 360;
+    var hsl2rgba = function(h, s, l) {
+        h /= 360;
 
-                var r, g, b;
+        var r, g, b;
 
-                if (s == 0) {
-                    r = g = b = l; // achromatic
-                } else {
-                    function hue2rgb(p, q, t) {
-                        if (t < 0) t += 1;
-                        if (t > 1) t -= 1;
-                        if (t < 1 / 6) return p + (q - p) * 6 * t;
-                        if (t < 1 / 2) return q;
-                        if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
-                        return p;
-                    }
-
-                    var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-                    var p = 2 * l - q;
-
-                    r = hue2rgb(p, q, h + 1 / 3);
-                    g = hue2rgb(p, q, h);
-                    b = hue2rgb(p, q, h - 1 / 3);
-                }
-
-                return [fixed(r * 255), fixed(g * 255), fixed(b * 255), 1];
+        if (s == 0) {
+            r = g = b = l; // achromatic
+        } else {
+            function hue2rgb(p, q, t) {
+                if (t < 0) t += 1;
+                if (t > 1) t -= 1;
+                if (t < 1 / 6) return p + (q - p) * 6 * t;
+                if (t < 1 / 2) return q;
+                if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+                return p;
             }
 
-            var colorHandler = {
-                'hex': function(color) {
-                    color = color.toLowerCase();
-                    // 如果是三位值，转换为六位
-                    if (color.length === 4) {
-                        var colorNew = "#";
-                        for (var i = 1; i < 4; i += 1) {
-                            colorNew += color.slice(i, i + 1).concat(color.slice(i, i + 1));
-                        }
-                        color = colorNew;
-                    }
-                    //处理六位的颜色值
-                    var colorChange = [];
-                    for (var i = 1; i < 7; i += 2) {
-                        colorChange.push(parseInt("0x" + color.slice(i, i + 2)));
-                    }
-                    color = "rgba(" + colorChange.join(", ") + ", 1)";
-                    return colorHandler['rgba'](color);
-                },
+            var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+            var p = 2 * l - q;
 
-                'rgb': function(color) {
-                    var result = /rgb\(([0-9]+), ?([0-9]+), ?([0-9]+)\)/.exec(color);
-                    var valueArr = [parseFloat(result[1]), parseFloat(result[2]), parseFloat(result[3]), 1];
-
-                    return {
-                        type: 'rgba',
-                        num: valueArr
-                    }
-                },
-
-                'hsl': function(color) {
-                    var result = /hsl\(([0-9]+), ?([0-9]+)%, ?([0-9]+)%\)/.exec(color);
-
-                    var valueArr = [parseFloat(result[1]), parseFloat(result[2]) / 100, parseFloat(result[3]) / 100];
-                    valueArr = hsl2rgba(valueArr[0], valueArr[1], valueArr[2]);
-
-                    return {
-                        type: 'rgba',
-                        num: valueArr
-                    };
-
-                },
-
-                'rgba': function(color) {
-                    var result = /rgba\(([0-9]+), ?([0-9]+), ?([0-9]+), ?(0\.[0-9]+|1)\)/.exec(color);
-
-                    var valueArr = [parseFloat(result[1]), parseFloat(result[2]), parseFloat(result[3]), parseFloat(result[4])];
-
-                    return {
-                        type: 'rgba',
-                        num: valueArr
-                    };
-                },
-            }
-
-            return function(color) {
-                color = color.toLowerCase();
-                if (reg.test(color)) { // 十六进制色
-                        return colorHandler['hex'](color);
-                    } else {
-                        var colorType = /([a-z])+/.exec(color)[0];
-
-                        if (colorHandler[colorType]) {
-                            return colorHandler[colorType](color);
-                        } else {
-                            throw new Error(color + '不是支持的颜色类型！');
-                        }
-                    }
-                }
-            })();
-
-        var fixed = function(num, decimalPlaces) {
-                if (!decimalPlaces) {
-                    return parseFloat(num.toFixed());
-                } else {
-                    return parseFloat(num.toFixed(decimalPlaces));
-                }
-            }
-            //======================测试========================
-        var block1 = document.getElementById('test1');
-
-        var rushBlock1 = new Rush(block1).add({
-            'width': 600,
-            'translateX': 200,
-            'background-color': '#4286f4'
-        }, 1000).add({
-            'rotateZ': 240
-        }, 800).add({
-            'width': 150,
-            'rotateZ': 0,
-            'translateX': 0,
-            'background-color': 'rgba(11, 198, 77, 0.6)'
-        }, 500);
-
-        rushBlock1.setLoopForever(); rushBlock1.start();
-
-        var stopBtn = document.getElementById('stop');
-
-        stopBtn.onclick = function() {
-            rushBlock1.pause();
+            r = hue2rgb(p, q, h + 1 / 3);
+            g = hue2rgb(p, q, h);
+            b = hue2rgb(p, q, h - 1 / 3);
         }
 
-        var moveBtn = document.getElementById('move');
+        return [fixed(r * 255), fixed(g * 255), fixed(b * 255), 1];
+    }
 
-        moveBtn.onclick = function() {
-            rushBlock1.play();
+    var colorHandler = {
+        'hex': function(color) {
+            color = color.toLowerCase();
+            // 如果是三位值，转换为六位
+            if (color.length === 4) {
+                var colorNew = "#";
+                for (var i = 1; i < 4; i += 1) {
+                    colorNew += color.slice(i, i + 1).concat(color.slice(i, i + 1));
+                }
+                color = colorNew;
+            }
+            //处理六位的颜色值
+            var colorChange = [];
+            for (var i = 1; i < 7; i += 2) {
+                colorChange.push(parseInt("0x" + color.slice(i, i + 2)));
+            }
+            color = "rgba(" + colorChange.join(", ") + ", 1)";
+            return colorHandler['rgba'](color);
+        },
+
+        'rgb': function(color) {
+            var result = /rgb\(([0-9]+), ?([0-9]+), ?([0-9]+)\)/.exec(color);
+            var valueArr = [parseFloat(result[1]), parseFloat(result[2]), parseFloat(result[3]), 1];
+
+            return {
+                type: 'rgba',
+                num: valueArr
+            }
+        },
+
+        'hsl': function(color) {
+            var result = /hsl\(([0-9]+), ?([0-9]+)%, ?([0-9]+)%\)/.exec(color);
+
+            var valueArr = [parseFloat(result[1]), parseFloat(result[2]) / 100, parseFloat(result[3]) / 100];
+            valueArr = hsl2rgba(valueArr[0], valueArr[1], valueArr[2]);
+
+            return {
+                type: 'rgba',
+                num: valueArr
+            };
+
+        },
+
+        'rgba': function(color) {
+            var result = /rgba\(([0-9]+), ?([0-9]+), ?([0-9]+), ?(0\.[0-9]+|1)\)/.exec(color);
+
+            var valueArr = [parseFloat(result[1]), parseFloat(result[2]), parseFloat(result[3]), parseFloat(result[4])];
+
+            return {
+                type: 'rgba',
+                num: valueArr
+            };
+        },
+    }
+
+    return function(color) {
+        color = color.toLowerCase();
+        if (reg.test(color)) { // 十六进制色
+            return colorHandler['hex'](color);
+        } else {
+            var colorType = /([a-z])+/.exec(color)[0];
+
+            if (colorHandler[colorType]) {
+                return colorHandler[colorType](color);
+            } else {
+                throw new Error(color + '不是支持的颜色类型！');
+            }
         }
+    }
+})();
+
+var fixed = function(num, decimalPlaces) {
+        if (!decimalPlaces) {
+            return parseFloat(num.toFixed());
+        } else {
+            return parseFloat(num.toFixed(decimalPlaces));
+        }
+    }
+    //======================测试========================
+var block1 = document.getElementById('test1');
+
+// var rushBlock1 = new Rush(block1).add({
+//     'width': 600,
+//     'translateX': 200,
+//     'background-color': '#4286f4'
+// }, 1000).add({
+//     'rotateZ': 240
+// }, 800).add({
+//     'width': 150,
+//     'rotateZ': 0,
+//     'translateX': 0,
+//     'background-color': 'rgba(11, 198, 77, 0.6)'
+// }, 500);
+
+var rushBlock1 = new Rush(block1).add('fadeOut', 1000).add('fadeIn', 1000);
+
+// rushBlock1.setLoopForever();
+rushBlock1.start();
+
+var stopBtn = document.getElementById('stop');
+
+stopBtn.onclick = function() {
+    rushBlock1.pause();
+}
+
+var moveBtn = document.getElementById('move');
+
+moveBtn.onclick = function() {
+    rushBlock1.play();
+}
