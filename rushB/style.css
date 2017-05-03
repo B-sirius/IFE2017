@@ -1,5 +1,6 @@
 body {
     font-family: "Microsoft Yahei", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+    background: #fff;
 }
 
 p {
@@ -16,6 +17,10 @@ h2 {
     border-bottom: 1px solid #eee;
 }
 
+code {
+    font-size: 18px;
+}
+
 .href {
     text-decoration: none;
     color: #0079d1;
@@ -27,11 +32,35 @@ h2 {
 
 .container {
     margin: 0 auto;
-    max-width: 1100px;
+    max-width: 1000px;
+    padding: 20px 30px;
+}
+
+.header {
+    font-size: 0;
+}
+
+.header .title {
+    font-size: 36px;
+    display: inline-block;
+    margin: 0;
+    padding-right: 12px;
+    border-right: 1px solid #ddd;
+}
+
+.header .github {
+    display: inline-block;
+    vertical-align: -3px;
+    width: 40px;
+    height: 40px;
+    margin-left: 12px;
+    background: url('img/github.svg');
+    background-size: cover;
+    cursor: pointer;
 }
 
 .show-container {
-    margin: 20px 0;
+    margin: 15px 0 30px 0;
     position: relative;
 }
 
@@ -49,12 +78,27 @@ h2 {
     cursor: pointer;
 }
 
+.show-container .btn.disable {
+    background: #eee;
+    border: 1px solid #DCDCDC;
+    color: #B7B7B7;
+    pointer-events: none;
+}
+
 .show-container .btn:hover {
     background: #138EE8;
     color: #fff;
 }
 
+.show-container .btn.disable:hover {
+    background: #eee;
+    border: 1px solid #DCDCDC;
+    color: #B7B7B7;
+    pointer-events: none;
+}
+
 .show-container .content .test-block {
+    display: inline-block;
     width: 70px;
     height: 70px;
     background: #78F6B8;

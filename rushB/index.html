@@ -3,44 +3,183 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>rushB!</title>
-    <link href="//cdn.bootcss.com/highlight.js/9.11.0/styles/default.min.css" rel="stylesheet">
+    <title>rushB.js 中文文档</title>
+    <link href="//cdn.bootcss.com/highlight.js/9.11.0/styles/atom-one-dark.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <link rel="shortcut icon" href="img/icon.jpg">
     <body>
         <div class="container">
-            <header>
-                <h1>RushB.js</h1>
+            <header class="header">
+                <h1 class="title">RushB.js 中文文档</h1>
+                <a target="_blank" href="https://github.com/B-sirius/IFE2017/tree/master/rushB" class="github"></a>
             </header>
             <div class="content">
                 <div class="section">
                     <h2 class="primary">概述</h2>
-                    <p>RushB.js是一个没有经过太多优化的js动画库，能够实现包括颜色动画，转换(transform)动画在内的缓动动画，在处理transfrom，颜色的方法上参考了一点velocity.js的早期版本，但是主体上还是自己实现，和几千行的velocity.js想必有很大差距（摊）。</p>
+                    <p>
+                        RushB.js是一个没有经过太多优化的js动画库，能够实现包括颜色动画，转换(transform)动画在内的缓动动画，在处理transfrom，颜色的方法上参考了一点velocity.js的早期版本，但是主体上还是从零实现，和几千行的velocity.js相比想必有很大差距（摊）。
+                    </p>
                 </div>
                 <div class="section">
-                    <h2 class="primary">如何使用</h2>
+                    <h2 class="primary">基础用法</h2>
                     <p>由于希望实现尽可能多的缓动效果，RushB.js依赖<a class="href" target="_blank" href="https://github.com/zhangxinxu/Tween">Tween.js</a>。下面是一个简单的例子：</p>
                     <div class="code-container">
+                        <pre><code class="html">
+        &lt;body&gt;
+            ...
+            &lt;script src=&#34;tween.js&#34;&gt;&lt;/script&gt;
+            &lt;script src=&#34;rushB.js&#34;&gt;&lt;/script&gt;
+        &lt;/body&gt;
+                        </code></pre>
+                    </div>
+                    <div class="code-container">
                         <pre><code class="javascript">
-                            'use strict';
+        // 创建rush对象
+        var rush1 = new Rush(block1);
 
-                            var a = function() {
-                                console.log("233");
-                            };
+        // 添加动画队列
+        rush1.add({
+            width: 300,
+            height: '200px'
+        }, 1500);
+
+        rush1.add({
+             'width': 70,
+             'height': 70,
+             'margin-left': 200 // 连字符形式
+        }, 2000);
+
+        // 启动动画
+        rush1.start();
+                        </code></pre>
+                    </div>
+                    <p>由于RushB.js支持链式调用，所以上面的代码等同于：</p>
+                    <div class="code-container">
+                        <pre><code class="javascript">
+        // 支持链式调用
+        var rush1 = new Rush(block1).add({
+            width: 300,
+            height: '200px'
+        }, 1500).add({
+            'width': 70,
+            'height': 70,
+            'margin-left': 200
+        }, 2000).start();
                         </code></pre>
                     </div>
                     <div class="show-container">
                         <div class="content">
-                            <div class="test-block"></div>
+                            <div class="test-block" id="block1"></div>
                         </div>
-                        <a class="btn">开始</a>
+                        <a class="btn" id="btn1">开始</a>
+                    </div>
+                </div>
+                <div class="section">
+                    <h2 class="primary">transform动画</h2>
+                    <p>
+                        transform动画有一点尴尬，与velocity.js一样，无法获取到元素的初始transform属性，所以仅适用于初始状态没有transform属性的元素，且要注意的是，定义transform属性时需要以相关属性而非transform为属性名，以下是所有常用的transform可用属性：
+                    </p>
+                    <div class="code-container">
+                        <pre><code class="javascript">
+        {
+            /* translate */
+            translateX: 20,     // 等同于"20px"
+            translateY: "1.5em",
+            translateZ: "20px", // IE10+
+
+            /* scale */
+            scale: 0.5,
+            scaleX: 0.5,
+            scaleY: 0.5,
+
+            /* rotate */
+            rotate: 45,       // 等同于"45deg"
+            rotateX: "45deg", // IE10+
+            rotateY: "45deg", // IE10+
+            rotateZ: "45deg",
+
+            /* skew */
+            skewX: "30deg",
+            skewY: "30deg",
+        }
+                        </code></pre>
+                    </div>
+                    <p>一个应用transform动画的例子：</p>
+                    <div class="code-container">
+                        <pre><code class="javascript">
+        var rush2 = new Rush(block2).add({
+            translateX: 200, // 注意定义，不是transform: translateX(200px)
+            rotateZ: 360 // deg可省略
+        }, 1000).add({
+            translateX: 0,
+            rotateZ: '0deg'
+        }, 1000);
+
+        rush2.start();
+                        </code></pre>
+                    </div>
+                    <div class="show-container">
+                        <div class="content">
+                            <div class="test-block" id="block2"></div>
+                        </div>
+                        <a class="btn" id="btn2">开始</a>
+                    </div>
+                </div>
+                <div class="section">
+                    <h2 class="primary">color动画</h2>
+                    <p>
+                        color动画支持十六进制，hsl，rgb，rgba的颜色表示，所有支持的颜色属性如下所示
+                    </p>
+                    <div class="code-container">
+                        <pre><code class="javascript">
+        {
+            'color': '#fff',
+            
+            'background-color': '#fff',
+
+            'border-color': '#fff',
+            
+            'outline-color': '#fff'
+        }
+                        </code></pre>
+                    </div>
+                    <p>一个应用color动画的例子：</p>
+                    <div class="code-container">
+                        <pre><code class="javascript">
+        var rush3 = new Rush(block3).add({
+            'background-color': '#C54CFF'
+        }, 1000).add({
+            'background-color': 'rgba(79, 249, 255, 0.8)'
+        }, 1000).start();
+                        </code></pre>
+                    </div>
+                    <div class="show-container">
+                        <div class="content">
+                            <div class="test-block" id="block3"></div>
+                        </div>
+                        <a class="btn" id="btn3">开始</a>
                     </div>
                 </div>
             </div>
         </div>
         <script src="//cdn.bootcss.com/highlight.js/9.11.0/highlight.min.js"></script>
-        <script>hljs.initHighlightingOnLoad();</script>
+        <script>
+            hljs.initHighlightingOnLoad();
+        </script>
         <script src="tween.js"></script>
         <script src="rushB.js"></script>
         <script src="script.js"></script>
     </body>
+
+</html>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+</head>
+<body>
+    
+</body>
 </html>

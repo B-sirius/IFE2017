@@ -456,8 +456,6 @@
                         changeValue = task.newProps[key].end.num - beginValue; // 位置改变量
 
                     var newValue = easing(task.lastTime, beginValue, changeValue, duration); // 根据缓动函数计算新的位置
-                    console.log(newValue);
-
 
                     // 更新style
                     self.styleHandler(task, key, newValue);
