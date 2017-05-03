@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>rushB!</title>
+    <link href="//cdn.bootcss.com/highlight.js/9.11.0/styles/default.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <body>
+        <div class="container">
+            <header>
+                <h1>RushB.js</h1>
+            </header>
+            <div class="content">
+                <div class="section">
+                    <h2 class="primary">概述</h2>
+                    <p>RushB.js是一个没有经过太多优化的js动画库，能够实现包括颜色动画，转换(transform)动画在内的缓动动画，在处理transfrom，颜色的方法上参考了一点velocity.js的早期版本，但是主体上还是自己实现，和几千行的velocity.js想必有很大差距（摊）。</p>
+                </div>
+                <div class="section">
+                    <h2 class="primary">如何使用</h2>
+                    <p>由于希望实现尽可能多的缓动效果，RushB.js依赖<a class="href" target="_blank" href="https://github.com/zhangxinxu/Tween">Tween.js</a>。下面是一个简单的例子：</p>
+                    <div class="code-container">
+                        <pre><code class="javascript">
+                            'use strict';
+
+                            var a = function() {
+                                console.log("233");
+                            };
+                        </code></pre>
+                    </div>
+                    <div class="show-container">
+                        <div class="content">
+                            <div class="test-block"></div>
+                        </div>
+                        <a class="btn">开始</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script src="//cdn.bootcss.com/highlight.js/9.11.0/highlight.min.js"></script>
+        <script>hljs.initHighlightingOnLoad();</script>
+        <script src="tween.js"></script>
+        <script src="rushB.js"></script>
+        <script src="script.js"></script>
+    </body>
+</html>
