@@ -36,8 +36,8 @@
      * @param  {number} duration  动画持续时间，单位ms
      * @param {object} options 定制选项，支持的参数：
      * {
-     *     before: function() {} // 此动画任务开始前触发的函数（如果有delay，在delay结束后才触发）
-     *     after: function() {} // 此动画任务结束后立即触发的函数
+     *     before: function() {} // 此动画任务开始前触发的函数（如果有delay，在delay结束后才触发）（如果有循环，只在第一遍动画执行）
+     *     after: function() {} // 此动画任务结束后立即触发的函数（如果有循环，只在最后一遍循环执行）
      *     delay: 200 // 此动画任务开始前的延时
      *     easing: Math.tween.Quad.easeInOut 缓动函数
      *     display: 'block' task结束后元素的display
@@ -83,6 +83,7 @@
         if (n) {
             if ((n | 0) === n && n > 0) {
                 this.loop = n;
+                this.currLoop = 1;
             } else {
                 throw new Error('循环次数必须是大于等于0的整数!');
             }
@@ -135,9 +136,35 @@
         var task = this.taskQuque[this.index];
 
         if (task.rushId === null) {
+
             this._renderFrame(task);
         }
         return this;
+    }
+
+    Rush.prototype.finish = function() {
+        if (this.state === STATE_INITIAL) {
+            return;
+        }
+
+        this.pause(); // 先暂停动画
+
+        var task = this.taskQuque[this.taskQuque.length - 1]; // 切换到最后一个命令
+        // 如果task是预定义命令，处理成标准命令
+        if (typeof task.props === 'string') {
+            this._easyTask(task);
+        } else {
+            task.data = task.props;
+        }
+
+        this._handleProps(task);
+
+        // 直接定位到末状态
+        for (var key in task.newProps) {
+            self.styleHandler(task, key, task.newProps[key].end.num);
+        }
+
+        this._reset(); // 重置动画序列
     }
 
     /**
@@ -155,6 +182,8 @@
         // 如果task是预定义命令
         if (typeof task.props === 'string') {
             this._easyTask(task);
+        } else {
+            task.data = task.props;
         }
 
         this._handleProps(task);
@@ -164,12 +193,16 @@
         task.options.delay ? task.timeoutId = setTimeout(function() {
             // 有before回调函数则执行
             if (task.options.before) {
-                task.options.before();
+                if (!self.loop || self.loop === -1 || self.currLoop === 1) {
+                    task.options.before();
+                }
             }
             self._renderFrame(task);
         }, task.options.delay) : (() => {
             if (task.options.before) {
-                task.options.before();
+                if (!self.loop || self.loop === -1 || self.currLoop === 1) {
+                    task.options.before();
+                }
             }
             this._renderFrame(task);
         })();
@@ -190,7 +223,7 @@
                     },
 
                     // 定义真正的task
-                    task.props = {
+                    task.data = {
                         height: 0
                     }
 
@@ -202,7 +235,7 @@
             'slideDown': function(task) {
                 if (this.el.slideCache) {
                     // 设置为收起前的状态
-                    task.props = {
+                    task.data = {
                         height: this.el.slideCache.height,
                     }
 
@@ -219,7 +252,7 @@
                 }
 
                 // 定义真正的task
-                task.props = {
+                task.data = {
                     opacity: 0
                 }
 
@@ -231,7 +264,7 @@
             'fadeIn': function(task) {
                 if (this.el.fadeCache) {
                     // 设置为收起前的状态
-                    task.props = {
+                    task.data = {
                         opacity: this.el.fadeCache.opacity,
                     }
 
@@ -263,7 +296,7 @@
             var el = this.el;
 
             var begin; // 初始属性值和单位
-            var end = propertyValueHandler(key, task.props[key]); // 末属性数值和单位
+            var end = propertyValueHandler(key, task.data[key]); // 末属性数值和单位
 
             var realPropertyName = key; // 真正的属性名
             var styleLogic = 'default';
@@ -289,7 +322,7 @@
                 var el = this.el;
 
                 var begin; // 初始属性值和单位
-                var end = propertyValueHandler(key, task.props[key]); // 末属性数值和单位
+                var end = propertyValueHandler(key, task.data[key]); // 末属性数值和单位
 
                 var realPropertyName = 'transform';
                 var styleLogic = 'transform';
@@ -338,7 +371,7 @@
                 var el = this.el;
 
                 var begin;
-                var end = normalize2rgba(task.props[key]);
+                var end = normalize2rgba(task.data[key]);
 
                 var realPropertyName = key;
 
@@ -364,7 +397,7 @@
 
             task.newProps = {}; // 保存渲染动画时所需的数据
 
-            for (var key in task.props) {
+            for (var key in task.data) {
                 if (propertyHandler[key]) { // 特殊属性
                     propertyHandler[key].call(this, task, key);
                 } else { // 普通属性
@@ -422,7 +455,7 @@
      * @param  {object} task 任务对象
      */
     Rush.prototype._renderFrame = function(task) {
-        task.startTime = (new Date()).getTime(); //开始任务的时间
+        task.startTime = (new Date()).getTime() - task.lastTime; //开始任务的时间
 
         var self = this;
 
@@ -475,7 +508,9 @@
 
                 // 有after回调函数则执行
                 if (task.options.after) {
-                    task.options.after();
+                    if (!self.loop || (self.loop !== -1 && self.currLoop === self.loop)) {
+                        task.options.after();
+                    }
                 }
 
                 // 执行下一个任务
@@ -523,8 +558,10 @@
             return this;
         }
 
-        if (this.loop && --this.loop) {
+        if (this.loop && this.currLoop++ < this.loop) {
             this.start();
+        } else {
+            this.currLoop = 1;
         }
 
         return this;
