@@ -35,14 +35,12 @@ var initDemo = (function() {
 
         var rush1 = new Rush(block1).add({
             width: 300,
-            height: '200px'
         }, 1000, {
             before: function() {
                 btnState['disable'](btn1);
             }
         }).add({
-            'width': 70,
-            'height': 70,
+            'width': 'px',
             'margin-left': 200
         }, 700, {
             after: function() {

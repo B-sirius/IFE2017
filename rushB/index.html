@@ -14,12 +14,13 @@
                 <header class="header">
                     <h1 class="title">RushB.js 中文文档</h1>
                     <a target="_blank" href="https://github.com/B-sirius/IFE2017/tree/master/rushB" class="github"></a>
+                    <p class="version">版本：v0.0.0 <span class="date">（更新于2017-5-5）...假装会更新(•ㅂ•)/</span></p>
                 </header>
                 <div class="content">
                     <div class="section">
                         <h2 class="primary">Intro 概述</h2>
                         <p>
-                            RushB.js是一个没有经过太多优化的js动画库，能够实现包括颜色动画，转换(transform)动画在内的缓动动画，在处理transfrom，颜色的方法上参考了一点velocity.js的早期版本，但是主体上还是从零实现，和几千行的velocity.js相比想必有很大差距（摊）。
+                            RushB.js是一个没有经过太多优化的js动画库，能够实现包括颜色动画，转换(transform)动画在内的缓动动画；在处理transfrom，颜色的方法上参考了一点velocity.js的早期版本，但是主体上还是从零实现，和几千行的velocity.js相比想必有很大差距 (´c_`)。
                         </p>
                     </div>
                     <div class="section">
@@ -41,30 +42,26 @@
 
     // add方法添加动画队列
     rush1.add({
-        width: 300,
-        height: '200px'
+        width: 300, // 单位可省略
     }, 1500);
 
     rush1.add({
-         'width': 70,
-         'height': 70,
+         'width': '70px',
          'margin-left': 200 // 连字符形式
     }, 2000);
 
     // 启动动画
     rush1.start();
                     </code></pre>
-                    </div>
-                    <p>由于RushB.js支持链式调用，所以上面的代码等同于：</p>
-                    <div class="code-container">
-                        <pre><code class="javascript">
+                        </div>
+                        <p>由于RushB.js支持链式调用，所以上面的代码等同于：</p>
+                        <div class="code-container">
+                            <pre><code class="javascript">
     // 支持链式调用
     var rush1 = new Rush(block1).add({
         width: 300,
-        height: '200px'
     }, 1500).add({
         'width': 70,
-        'height': 70,
         'margin-left': 200
     }, 2000).start();
                         </code></pre>
@@ -85,29 +82,26 @@
                             <pre><code class="javascript">
     {
         /* translate */
-        translateX: 20,     // 等同于"20px"
-        translateY: "1.5em",
-        translateZ: "20px", // IE10+
-
+        'translateX': 20,     // 等同于'20px'
+        'translateY': '1.5em',
+        'translateZ': '20px', // IE10+
         /* scale */
-        scale: 0.5,
-        scaleX: 0.5,
-        scaleY: 0.5,
-
+        'scale': 0.5,
+        'scaleX': 0.5,
+        'scaleY': 0.5,
         /* rotate */
-        rotateX: "45deg",
-        rotateY: "45deg",
-        rotateZ: "45deg",
-
+        'rotateX': '45deg',
+        'rotateY': '45deg',
+        'rotateZ': '45deg',
         /* skew */
-        skewX: "30deg",
-        skewY: "30deg",
+        'skewX': '30deg',
+        'skewY': '30deg'
     }
                     </code></pre>
-                    </div>
-                    <p>一个应用transform动画的例子：</p>
-                    <div class="code-container">
-                        <pre><code class="javascript">
+                        </div>
+                        <p>一个应用transform动画的例子：</p>
+                        <div class="code-container">
+                            <pre><code class="javascript">
     var rush2 = new Rush(block2).add({
         translateX: 200,    // 注意定义，不是transform: translateX(200px)
         rotateZ: 360        // deg可省略
@@ -129,7 +123,7 @@
                     <div class="section">
                         <h2 class="primary"><a name="color-animation">Color 动画</a></h2>
                         <p>
-                            color动画支持十六进制，hsl，rgb，rgba的颜色表示，所有支持的颜色属性如下所示
+                            color动画支持十六进制，hsl，rgb，rgba的颜色表示，所有支持的颜色属性如下所示：
                         </p>
                         <div class="code-container">
                             <pre><code class="javascript">
@@ -143,10 +137,10 @@
         'outline-color': '#fff'
     }
                     </code></pre>
-                    </div>
-                    <p>一个应用color动画的例子：</p>
-                    <div class="code-container">
-                        <pre><code class="javascript">
+                        </div>
+                        <p>一个应用color动画的例子：</p>
+                        <div class="code-container">
+                            <pre><code class="javascript">
     var rush3 = new Rush(block3).add({
         'background-color': '#C54CFF'
     }, 1000).add({
@@ -162,7 +156,7 @@
                         </div>
                     </div>
                     <div class="section">
-                        <h2 class="primary">Arguments 参数</h2>
+                        <h2 class="primary"><a name="arguments">Arguments 参数</a></h2>
                         <p>
                             add方法用于添加动画序列，下面为参数的写法：
                         </p>
@@ -190,7 +184,7 @@
             after: function() {},
             // 此动画任务开始前的延时，单位毫秒
             delay: 1000,
-            // 缓动函数
+            // 缓动函数，具体参照Tween.js文档
             easing: Math.tween.Quad.easeInOut,
             // task结束后设置元素的display
             display: 'block'
@@ -212,18 +206,18 @@
 
     rush4.start();
                             </code></pre>
-                        <div class="show-container">
-                            <div class="content">
-                                <div class="test-block" id="block4"></div>
+                            <div class="show-container">
+                                <div class="content">
+                                    <div class="test-block" id="block4"></div>
+                                </div>
+                                <a class="btn" id="btn4">开始</a>
                             </div>
-                            <a class="btn" id="btn4">开始</a>
                         </div>
                     </div>
-                </div>
-                <div class="section">
-                        <h2 class="primary">Command 指令</h2>
+                    <div class="section">
+                        <h2 class="primary"><a name="command">Command 指令</a></h2>
                         <p>
-                            为了实现对动画的控制，俺们提供了一些基本的指令，基本到用一个例子就能介绍完：
+                            为了实现对动画的控制，俺们提供了一些基本的指令，基本到用一个例子就能介绍完 (´･_･`)：
                         </p>
                         <div class="code-container">
                             <pre><code class="javascript">
@@ -261,18 +255,19 @@
     }
 
     var rushHandler = {
-        0: function(rush, btn) { // STATE_INITIAL
+        0: function(rush, btn) { // STATE_INITIAL 动画未启动
             btn.innerHTML = '暂停';
 
-            rush.start(); // 开始动画
+            // start方法，启动动画序列
+            rush.start(); 
         },
-        1: function(rush, btn) { // STATE_START
+        1: function(rush, btn) { // STATE_START 动画正在进行
             btn.innerHTML = '继续';
 
             // pause方法，暂停已启动的动画
             rush.pause();
         },
-        2: function(rush, btn) { // STATE_STOP
+        2: function(rush, btn) { // STATE_STOP 动画暂停中
             btn.innerHTML = '暂停';
 
             // play方法，继续已暂停的动画
@@ -280,24 +275,29 @@
         }
     }
                             </code></pre>
-                        <div class="show-container">
-                            <div class="content">
-                                <div class="test-block" id="block5"></div>
+                            <div class="show-container">
+                                <div class="content">
+                                    <div class="test-block" id="block5"></div>
+                                </div>
+                                <a class="btn" id="btn5-1">开始</a>
+                                <a class="btn finish" id="btn5-2">结束</a>
                             </div>
-                            <a class="btn" id="btn5-1">开始</a>
-                            <a class="btn finish" id="btn5-2">结束</a>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="sidebar-container">
                 <ul class="sidebar">
-                    <li><a class="item" href="#basic-usage">1. 基础用法</a></li>
-                    <li><a class="item" href="#transform-animation">2. transform动画</a></li>
-                    <li><a class="item" href="#color-animation">3. color动画</a></li>
+                    <li class="title">导航：</li>
+                    <li><a class="item" href="#basic-usage">1. Basic Usage 基础用法</a></li>
+                    <li><a class="item" href="#transform-animation">2. Transform 动画</a></li>
+                    <li><a class="item" href="#color-animation">3. Color 动画</a></li>
+                    <li><a class="item" href="#arguments">4. Arguments 参数</a></li>
+                    <li><a class="item" href="#command">5. Command 指令</a></li>
                 </ul>
             </div>
         </div>
+        <footer class="footer">我一个彩虹玩家，怎么就写了个 <a href="https://github.com/B-sirius/IFE2017/tree/master/rushB" target="_blank" class="link">RushB</a> 呢... (⁰⊖⁰)</footer>
         <script src="//cdn.bootcss.com/highlight.js/9.11.0/highlight.min.js"></script>
         <script>
         hljs.initHighlightingOnLoad();
@@ -306,17 +306,5 @@
         <script src="rushB.js"></script>
         <script src="script.js"></script>
     </body>
-
-</html>
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <title>Document</title>
-</head>
-
-<body>
-</body>
 
 </html>
