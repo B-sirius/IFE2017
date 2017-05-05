@@ -116,7 +116,7 @@ var initDemo = (function() {
         }).add('slideDown', 1000, {
             after: function() {
                 btnState['enable'](btn4);
-                alert('p90 rush b, dont stop!');
+                alert('p90 rush b dont stop!');
             },
             delay: 600,
         });
@@ -139,13 +139,10 @@ var initDemo = (function() {
         rush5.add({
             translateX: 0,
             rotateZ: 0
-        },1200, {
+        }, 1200, {
             after: function() {
                 btn5_1.innerHTML = '开始';
-                console.log('wow');
-            },
-            before: function() {
-                console.log('233');
+                alert('p90 rush b dont stop!')
             }
         });
 
@@ -156,9 +153,9 @@ var initDemo = (function() {
         };
 
         btn5_2.onclick = function() {
+            btn5_1.innerHTML = '开始';
             rush5.finish();
         }
     })();
 })();
-
 

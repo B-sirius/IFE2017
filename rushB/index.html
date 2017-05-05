@@ -36,37 +36,37 @@
                         </div>
                         <div class="code-container">
                             <pre><code class="javascript">
-        // 创建rush对象
-        var rush1 = new Rush(block1);
+    // 创建rush对象
+    var rush1 = new Rush(block1);
 
-        // add方法添加动画队列
-        rush1.add({
-            width: 300,
-            height: '200px'
-        }, 1500);
+    // add方法添加动画队列
+    rush1.add({
+        width: 300,
+        height: '200px'
+    }, 1500);
 
-        rush1.add({
-             'width': 70,
-             'height': 70,
-             'margin-left': 200 // 连字符形式
-        }, 2000);
+    rush1.add({
+         'width': 70,
+         'height': 70,
+         'margin-left': 200 // 连字符形式
+    }, 2000);
 
-        // 启动动画
-        rush1.start();
-                        </code></pre>
-                        </div>
-                        <p>由于RushB.js支持链式调用，所以上面的代码等同于：</p>
-                        <div class="code-container">
-                            <pre><code class="javascript">
-        // 支持链式调用
-        var rush1 = new Rush(block1).add({
-            width: 300,
-            height: '200px'
-        }, 1500).add({
-            'width': 70,
-            'height': 70,
-            'margin-left': 200
-        }, 2000).start();
+    // 启动动画
+    rush1.start();
+                    </code></pre>
+                    </div>
+                    <p>由于RushB.js支持链式调用，所以上面的代码等同于：</p>
+                    <div class="code-container">
+                        <pre><code class="javascript">
+    // 支持链式调用
+    var rush1 = new Rush(block1).add({
+        width: 300,
+        height: '200px'
+    }, 1500).add({
+        'width': 70,
+        'height': 70,
+        'margin-left': 200
+    }, 2000).start();
                         </code></pre>
                         </div>
                         <div class="show-container">
@@ -83,40 +83,40 @@
                         </p>
                         <div class="code-container">
                             <pre><code class="javascript">
-        {
-            /* translate */
-            translateX: 20,     // 等同于"20px"
-            translateY: "1.5em",
-            translateZ: "20px", // IE10+
+    {
+        /* translate */
+        translateX: 20,     // 等同于"20px"
+        translateY: "1.5em",
+        translateZ: "20px", // IE10+
 
-            /* scale */
-            scale: 0.5,
-            scaleX: 0.5,
-            scaleY: 0.5,
+        /* scale */
+        scale: 0.5,
+        scaleX: 0.5,
+        scaleY: 0.5,
 
-            /* rotate */
-            rotateX: "45deg",
-            rotateY: "45deg",
-            rotateZ: "45deg",
+        /* rotate */
+        rotateX: "45deg",
+        rotateY: "45deg",
+        rotateZ: "45deg",
 
-            /* skew */
-            skewX: "30deg",
-            skewY: "30deg",
-        }
-                        </code></pre>
-                        </div>
-                        <p>一个应用transform动画的例子：</p>
-                        <div class="code-container">
-                            <pre><code class="javascript">
-        var rush2 = new Rush(block2).add({
-            translateX: 200,    // 注意定义，不是transform: translateX(200px)
-            rotateZ: 360        // deg可省略
-        }, 1000).add({
-            translateX: 0,
-            rotateZ: '0deg'
-        }, 1000);
+        /* skew */
+        skewX: "30deg",
+        skewY: "30deg",
+    }
+                    </code></pre>
+                    </div>
+                    <p>一个应用transform动画的例子：</p>
+                    <div class="code-container">
+                        <pre><code class="javascript">
+    var rush2 = new Rush(block2).add({
+        translateX: 200,    // 注意定义，不是transform: translateX(200px)
+        rotateZ: 360        // deg可省略
+    }, 1000).add({
+        translateX: 0,
+        rotateZ: '0deg'
+    }, 1000);
 
-        rush2.start();
+    rush2.start();
                         </code></pre>
                         </div>
                         <div class="show-container">
@@ -133,25 +133,25 @@
                         </p>
                         <div class="code-container">
                             <pre><code class="javascript">
-        {
-            'color': '#fff',
-            
-            'background-color': '#fff',
+    {
+        'color': '#fff',
+        
+        'background-color': '#fff',
 
-            'border-color': '#fff',
-            
-            'outline-color': '#fff'
-        }
-                        </code></pre>
-                        </div>
-                        <p>一个应用color动画的例子：</p>
-                        <div class="code-container">
-                            <pre><code class="javascript">
-        var rush3 = new Rush(block3).add({
-            'background-color': '#C54CFF'
-        }, 1000).add({
-            'background-color': 'rgba(79, 249, 255, 0.8)'
-        }, 1000).start();
+        'border-color': '#fff',
+        
+        'outline-color': '#fff'
+    }
+                    </code></pre>
+                    </div>
+                    <p>一个应用color动画的例子：</p>
+                    <div class="code-container">
+                        <pre><code class="javascript">
+    var rush3 = new Rush(block3).add({
+        'background-color': '#C54CFF'
+    }, 1000).add({
+        'background-color': 'rgba(79, 249, 255, 0.8)'
+    }, 1000).start();
                         </code></pre>
                         </div>
                         <div class="show-container">
@@ -168,20 +168,34 @@
                         </p>
                         <div class="code-container">
                             <pre><code class="javascript">
+    {
+        rush.add(
+        // 第一个参数，元素末状态属性
         {
-            rush.add({
-                // 第一个参数，需要变换的属性对象                                  
-                width: '500px',                         // 动画属性，宽度到'500px'的动画
-                property2: value2                       // 属性示例
-            },1000, { // 第二个参数，动画时长，单位毫秒                                   
-                // 第三个参数，动画额外配置项，可不传                                        
-                before: function() {},                  // 此动画任务开始前触发的函数（如果有delay，在delay结束后才触发）
-                after: function() {},                   // 此动画任务结束后立即触发的函数
-                delay: 1000,                            // 此动画任务开始前的延时，单位毫秒
-                easing: Math.tween.Quad.easeInOut,      // 缓动函数
-                display: 'block'                        // task结束后设置元素的display
-            });
-        }
+            // 动画属性，宽度到'500px'的动画                             
+            width: '500px',
+            // 属性示例
+            property2: value2 
+        },
+        // 第二个参数，动画时长，单位毫秒
+        1000,
+        // 第三个参数，动画额外配置项，可不传
+        {                                    
+            // 此动画任务开始前触发的函数
+            // 如设置循环，只在第一次触发
+            // 如果有delay，在delay结束后才触发              
+            before: function() {},
+            // 此动画任务结束后立即触发的函数
+            // 如设置循环，只在最后一次触发
+            after: function() {},
+            // 此动画任务开始前的延时，单位毫秒
+            delay: 1000,
+            // 缓动函数
+            easing: Math.tween.Quad.easeInOut,
+            // task结束后设置元素的display
+            display: 'block'
+        });
+    }
                             </code></pre>
                         </div>
                         <p>除此之外，也提供了几个预定义的常用动画指令，将字符串作为第一个参数传入add方法即可，目前已支持的有"slideUp" && "slideDown" 和 "fadeOut" && "fadeIn"，下面是一个例子：</p>
@@ -209,11 +223,62 @@
                 <div class="section">
                         <h2 class="primary">Command 指令</h2>
                         <p>
-                            为了实现对动画的控制，俺们提供了一些基本的指令，基本到我用一个例子就能介绍完：
+                            为了实现对动画的控制，俺们提供了一些基本的指令，基本到用一个例子就能介绍完：
                         </p>
                         <div class="code-container">
                             <pre><code class="javascript">
+    var rush5 = new Rush(block5);
+    rush5.add({
+        translateX: 300,
+        rotateZ: 360
+    }, 800);
+    rush5.add({
+        translateX: 0,
+        rotateZ: 0
+    }, 1200, {
+        after: function() {
+            alert('p90 rush b dont stop!')
+        }
+    });
 
+    // setLoop方法，传入动画重复的次数，如果不传入参数则无限重复
+    // 设置了循环后，如有before方法则只在第一轮动画触发
+    // 如有after方法则只在最后一轮动画触发（如果是无限循环则永远不会触发）
+    // rush5.setLoop(); 将无限重复动画
+    // rush5.setLoopForever(); 作用与上相同，更加语义化
+    rush5.setLoop(3); 
+
+    btn5_1.onclick = function() {
+        rushHandler[rush5.state](rush5, btn5_1);
+    };
+
+    btn5_2.onclick = function() {
+        btn5_1.innerHTML = '开始';
+
+        // finish方法，将直接结束已启动的动画(无过渡)
+        // 即使是无限循环也将直接结束，且不触发after回调
+        rush5.finish(); 
+    }
+
+    var rushHandler = {
+        0: function(rush, btn) { // STATE_INITIAL
+            btn.innerHTML = '暂停';
+
+            rush.start(); // 开始动画
+        },
+        1: function(rush, btn) { // STATE_START
+            btn.innerHTML = '继续';
+
+            // pause方法，暂停已启动的动画
+            rush.pause();
+        },
+        2: function(rush, btn) { // STATE_STOP
+            btn.innerHTML = '暂停';
+
+            // play方法，继续已暂停的动画
+            rush.play();
+        }
+    }
                             </code></pre>
                         <div class="show-container">
                             <div class="content">

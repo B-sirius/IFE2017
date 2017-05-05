@@ -161,7 +161,7 @@
 
         // 直接定位到末状态
         for (var key in task.newProps) {
-            self.styleHandler(task, key, task.newProps[key].end.num);
+            this.styleHandler(task, key, task.newProps[key].end.num);
         }
 
         this._reset(); // 重置动画序列
