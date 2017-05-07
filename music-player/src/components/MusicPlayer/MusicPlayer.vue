@@ -305,7 +305,7 @@ $currentProgressColor: rgba(225, 225, 225, .7);
 $volumeColor: rgba(225, 225, 225, .1);
 $currentVolumeColor: rgba(225, 225, 225, .7);
 $btnColor: rgba(225, 225, 225, .9);
-$icon: 'https://y.gtimg.cn/mediastyle/yqq/img/player.png?max_age=2592000&v=749f8d7b865b29877500567512879e12';
+$icon: 'http://7xrkxs.com1.z0.glb.clouddn.com/music/player.png';
 .player-container {
     width: 1100px;
     height: 115px;

@@ -279,7 +279,7 @@ $scrollWrapperColor: rgba(255, 255, 255, .1);
 $searchColor: rgba(255, 255, 255, .07);
 $searchBtnHoverColor: rgba(255, 255, 255, .1);
 $textColor: rgba(225, 225, 225, .8);
-$icon: 'https://y.gtimg.cn/mediastyle/yqq/img/icon_sprite.png?max_age=2592000&v=cfc9e963685e5ce3f9fcef4a4449cddb';
+$icon: 'http://7xrkxs.com1.z0.glb.clouddn.com/music/icon_sprite.png';
 body,
 html {
     height: 100%;

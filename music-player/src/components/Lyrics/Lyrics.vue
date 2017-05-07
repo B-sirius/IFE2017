@@ -27,8 +27,8 @@ export default {
     },
     data() {
         return {
-            defaultCover: 'http://s4.music.126.net/style/web2/img/default/default_album.jpg', // 默认专辑封面url
-            cover: 'http://s4.music.126.net/style/web2/img/default/default_album.jpg', // 当前歌曲专辑url
+            defaultCover: 'http://7xrkxs.com1.z0.glb.clouddn.com/music/default_album.jpg', // 默认专辑封面url
+            cover: 'http://7xrkxs.com1.z0.glb.clouddn.com/music/default_album.jpg', // 当前歌曲专辑url
             urlDetail: 'https://route.showapi.com/213-2?showapi_appid=34565&showapi_sign=c38a8f85afc24a429be423d2fc465ecc&musicid=', // 歌曲id搜索
             lyricText: '',
             lyricList: {

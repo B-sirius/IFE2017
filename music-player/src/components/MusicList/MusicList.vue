@@ -100,8 +100,8 @@ $playingTextColor: #fff;
 $background: #FBFBFB;
 $borderColor: rgba(225, 225, 225, .1);
 $hoverColor: rgba(225, 225, 225, .1);
-$waveGif: 'https://y.gtimg.cn/mediastyle/yqq/img/wave.gif';
-$icon: 'https://y.gtimg.cn/mediastyle/yqq/img/icon_list_menu.png?max_age=2592000&v=873fb6560497db4abbe63767018022eb';
+$waveGif: 'http://7xrkxs.com1.z0.glb.clouddn.com/music/wave.gif';
+$icon: 'http://7xrkxs.com1.z0.glb.clouddn.com/music/icon_list_menu.png';
 
 .list-container {
     color: $textColor;
