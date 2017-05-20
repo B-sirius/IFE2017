@@ -1,0 +1,23 @@
+body {
+    margin: 0;
+}
+body, html {
+    height: 100%;
+    overflow: hidden;
+}
+
+.thumbnails-container {
+    width: 138px;
+    height: 118px;
+    position: fixed;
+    left: 40px;
+    bottom: 40px;
+    border: 1px solid #fff;
+    background: #3A4144;
+}
+
+.main-container {
+    height: 100%;
+    overflow: hidden;
+    background: #3A4144;
+}
