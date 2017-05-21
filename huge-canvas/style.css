@@ -4,6 +4,7 @@ body {
 body, html {
     height: 100%;
     overflow: hidden;
+    background: #3A4144;
 }
 
 .thumbnails-container {
@@ -17,7 +18,22 @@ body, html {
 }
 
 .main-container {
+    width: 1024px;
+    height: 768px;
+    margin: auto;
+    margin-top: 50px;
+    border: 1px solid #fff;
+}
+
+.canvas {
+    position: absolute;
+    left: -9600px;
+    top: -5400px;
+    width: 19200px;
+    height: 10800px;
+}
+
+.canvas .img {
+    width: 100%;
     height: 100%;
-    overflow: hidden;
-    background: #3A4144;
 }
