@@ -7,7 +7,14 @@
 </head>
 <body>
     <div class="main-container">
-        <canvas class="canvas" id="canvas"></canvas>
+        <canvas class="canvas" id="canvas" width="1024" height="768"></canvas>
+        <div id="mask" class="mask">
+            <span class="mask-text">请选择图片</span>
+        </div>
+        <div class="thumbnail-container">
+           <img id="thumbnail" class="thumbnail">
+           <div id="selected" class="selected"></div>
+        </div>
     </div>
     <div class="tool-container">
         <label class="img-input-btn" for="imgInput">+</label>
