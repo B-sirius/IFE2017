@@ -20,7 +20,8 @@ var openImg = (function() {
             Mask.hide();
             Thumbnail.setImg(imgNode.src);
             Thumbnail.setSelected();
-            Canvas.drawImage(this, 0, 0);
+            Canvas.setImage(this);
+            Canvas.drawImage(0, 0);
         }
     }
 })();
@@ -77,21 +78,56 @@ var Thumbnail = (function() {
 var Canvas = (function() {
     var canvas = document.getElementById('canvas');
     var ctx = canvas.getContext('2d');
-    var canvasImg, offsetX, offSetY;
 
-    var drawImage = function(img, dx, dy) {
+    var canvasImg,
+        offsetX = 0,
+        offsetY = 0; // 保存当前的画布状态
+
+    var startX, startY; // 保存拖动画布时的起始位置
+
+    // 屏蔽右键菜单
+    canvas.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+    });
+
+    canvas.addEventListener('mousedown', function(e) {
+        // 只监听右键
+        if (e.button === 2) {
+            startX = e.offsetX,
+            startY = e.offsetY;
+
+            canvas.addEventListener('mousemove', mouseMove);
+            document.body.addEventListener('mouseup', rightMouseUp);
+        }
+    }, false);
+
+    var mouseMove = function(e) {
+        var throttleMoveCanvas = throttle(mediator.moveCanvas, 16);
+        throttleMoveCanvas(e, startX, startY);
+    }
+
+    var rightMouseUp = function(e) {
+        if (e.button === 2) {
+            offsetX += e.offsetX - startX;
+            offsetY += e.offsetY - startY;
+
+            canvas.removeEventListener('mousemove', mouseMove);
+        }
+    }
+
+    var setImage = function(img) {
         canvasImg = img;
-        offsetX = dx;
-        offSetY = dy;
+    }
 
+    var drawImage = function(dx, dy) {
         _clearCanvas();
-        ctx.drawImage(img, dx, dy);
+        ctx.drawImage(canvasImg, offsetX + dx, offsetY + dy);
     }
 
     var scale = function(dx, dy) {
         _clearCanvas();
         ctx.scale(dx, dy);
-        ctx.drawImage(canvasImg, offsetX, offSetY);
+        ctx.drawImage(canvasImg, offsetX, offsetY);
     }
 
     var getCanvas = function() {
@@ -104,12 +140,49 @@ var Canvas = (function() {
     }
 
     return {
+        setImage: setImage,
         drawImage: drawImage,
         scale: scale,
         getCanvas: getCanvas
     };
 })();
 
-var Controller = (function() {
-    
+// 节流函数工厂
+var throttle = function(fn, delay) {
+    var timer = null;
+    return function() {
+        if (timer) {
+            return false;
+        }
+        var self = this;
+        var args = arguments;
+
+        timer = setTimeout(function() {
+            clearTimeout(timer);
+            timer = null;
+
+            fn.apply(self, args);
+        }, delay);
+    }
+}
+
+// 中介者
+var mediator = (function() {
+    var moveCanvas = function() {
+        var args = [].slice.apply(arguments);
+
+        var e = args.shift();
+
+        var startX = args[0],
+            startY = args[1];
+
+        var dx = e.offsetX - startX,
+            dy = e.offsetY - startY;
+
+        Canvas.drawImage(dx, dy);
+    }
+
+    return {
+        moveCanvas: moveCanvas
+    }
 })();
