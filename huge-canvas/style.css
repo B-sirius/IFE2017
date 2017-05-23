@@ -1,5 +1,6 @@
 body {
     margin: 0;
+    font-family: "Microsoft Yahei", "Helvetica Neue","Helvetica","Arial",sans-serif;
 }
 body, html {
     background: #3A4144;
@@ -37,7 +38,7 @@ body, html {
 
 .main-container .thumbnail-container {
     position: absolute;
-    right: -220px;
+    right: -240px;
     bottom: 0;
     width: 200px;
     font-size: 0;
@@ -80,4 +81,37 @@ body, html {
 
 .tool-container .img-input {
     display: none;
+}
+
+.zoom-container {
+    position: absolute;
+    bottom: 0;
+    left: -70px;
+    display: flex;
+    width: 30px;
+    height: 120px;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.zoom-container .val {
+    color: #fff;
+    font-size: 16px;
+    text-align: center;
+}
+
+.zoom-container .btn {
+    width: 30px;
+    height: 30px;
+    line-height: 30px;
+    text-align: center;
+    background: #fff;
+    color: #3A4144;
+    font-size: 24px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.zoom-container .btn:hover {
+    background: #D6D6D6;
 }
