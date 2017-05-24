@@ -1,9 +1,17 @@
 body {
     margin: 0;
-    font-family: "Microsoft Yahei", "Helvetica Neue","Helvetica","Arial",sans-serif;
+    font-family: "Microsoft Yahei", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
 }
-body, html {
+
+body,
+html {
     background: #3A4144;
+}
+
+button {
+    border: none;
+    outline: none;
+    padding: 0;
 }
 
 .main-container {

@@ -1,5 +1,7 @@
 'use strict';
 
+var zoomLevel = 1;
+
 var openImg = (function() {
     var imgInput = document.getElementById('imgInput');
 
@@ -70,8 +72,8 @@ var Thumbnail = (function() {
 
         ratio = BenchmarkWidth / naturalWidth;
 
-        var selectedBoxWidth = (ratio * canvas.width).toFixed(2);
-        var selectedBoxHeight = (ratio * canvas.height).toFixed(2);
+        var selectedBoxWidth = (ratio * canvas.width / zoomLevel).toFixed(2);
+        var selectedBoxHeight = (ratio * canvas.height / zoomLevel).toFixed(2);
 
         selectedBox.style.width = selectedBoxWidth + 'px';
         selectedBox.style.height = selectedBoxHeight + 'px';
@@ -80,8 +82,11 @@ var Thumbnail = (function() {
     };
 
     var setPos = function(dx, dy) {
-        var x = limit(-dx * ratio + offsetX, 0, thumbnailImg.offsetWidth - selectedBox.offsetWidth);
-        var y = limit(-dy * ratio + offsetY, 0, thumbnailImg.offsetHeight - selectedBox.offsetHeight);
+        var disX = dx || 0;
+        var disY = dy || 0;
+
+        var x = limit(-disX * ratio + offsetX, 0, thumbnailImg.offsetWidth - selectedBox.offsetWidth);
+        var y = limit(-disY * ratio + offsetY, 0, thumbnailImg.offsetHeight - selectedBox.offsetHeight);
 
         selectedBox.style.left = x + 'px';
         selectedBox.style.top = y + 'px';
@@ -93,7 +98,6 @@ var Thumbnail = (function() {
 
         offsetX = limit(offsetX, 0, thumbnailImg.offsetWidth - selectedBox.offsetWidth);
         offsetY = limit(offsetY, 0, thumbnailImg.offsetHeight - selectedBox.offsetHeight);
-
     }
 
     var reset = function() {
@@ -116,7 +120,7 @@ var Canvas = (function() {
 
     var canvasImg,
         offsetX = 0,
-        offsetY = 0; // 保存当前的画布状态
+        offsetY = 0;
 
     var startX, startY; // 保存拖动画布时的起始位置
 
@@ -129,7 +133,7 @@ var Canvas = (function() {
         // 只监听右键
         if (e.button === 2) {
             startX = e.offsetX,
-            startY = e.offsetY;
+                startY = e.offsetY;
 
             canvas.addEventListener('mousemove', mouseMove);
             document.body.addEventListener('mouseup', mouseUp);
@@ -153,8 +157,8 @@ var Canvas = (function() {
         offsetX += dx;
         offsetY += dy;
 
-        offsetX = -limit(-offsetX, 0, canvasImg.naturalWidth - canvas.width);
-        offsetY = -limit(-offsetY, 0, canvasImg.naturalHeight - canvas.height);
+        offsetX = -limit(-offsetX * zoomLevel, 0, canvasImg.naturalWidth * zoomLevel - canvas.width) / zoomLevel;
+        offsetY = -limit(-offsetY * zoomLevel, 0, canvasImg.naturalHeight * zoomLevel - canvas.height) / zoomLevel;
     }
 
     var setImage = function(img) {
@@ -164,18 +168,17 @@ var Canvas = (function() {
     var drawImage = function(dx, dy) {
         _clearCanvas();
 
+        var disX = dx || 0;
+        var disY = dy || 0;
+
         var x, y;
 
-        x = -limit(-(offsetX + dx), 0, canvasImg.naturalWidth - canvas.width);
-        y = -limit(-(offsetY + dy), 0, canvasImg.naturalHeight - canvas.height);
+        x = -limit(-(offsetX + disX) * zoomLevel, 0, canvasImg.naturalWidth * zoomLevel - canvas.width) / zoomLevel;
+        y = -limit(-(offsetY + disY) * zoomLevel, 0, canvasImg.naturalHeight * zoomLevel - canvas.height) / zoomLevel;
+
+        console.log(-(offsetX + disX), canvasImg.naturalWidth * zoomLevel - canvas.width);
 
         ctx.drawImage(canvasImg, x, y);
-    }
-
-    var scale = function(dx, dy) {
-        _clearCanvas();
-        ctx.scale(dx, dy);
-        ctx.drawImage(canvasImg, offsetX, offsetY);
     }
 
     var getCanvas = function() {
@@ -190,16 +193,47 @@ var Canvas = (function() {
     var _clearCanvas = function() {
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.scale(zoomLevel, zoomLevel);
     }
 
     return {
         setImage: setImage,
         drawImage: drawImage,
-        scale: scale,
         getCanvas: getCanvas,
         reset: reset,
         setOffset: setOffset
     };
+})();
+
+var ZoomTool = (function() {
+    var zoomInBtn = document.getElementById('zoomIn');
+    var zoomOutBtn = document.getElementById('zoomOut');
+    var zoomLevelVal = document.getElementById('zoomLevel');
+
+    var zoomIn = function() {
+        zoomLevel += 0.2;
+        zoomLevel = zoomLevel.toFixed(1);
+        zoomLevel = parseFloat(zoomLevel);
+        mediator.zoom();
+    }
+
+    var zoomOut = function() {
+        zoomLevel -= 0.2;
+        zoomLevel = zoomLevel.toFixed(1);
+        zoomLevel = parseFloat(zoomLevel);
+        mediator.zoom();
+    }
+
+    zoomInBtn.addEventListener('click', zoomIn);
+    zoomOutBtn.addEventListener('click', zoomOut);
+
+    var setZoomLevelVal = function(val) {
+        zoomLevelVal.textContent = val;
+    }
+
+    return {
+        setZoomLevelVal: setZoomLevelVal
+    }
 })();
 
 // 中介者
@@ -234,9 +268,17 @@ var mediator = (function() {
         Thumbnail.setOffset(dx, dy);
     }
 
+    var zoom = function() {
+        ZoomTool.setZoomLevelVal(zoomLevel);
+        Canvas.drawImage();
+        Thumbnail.setSelected();
+        Thumbnail.setPos();
+    }
+
     return {
         moveCanvas: moveCanvas,
-        setOffset: setOffset
+        setOffset: setOffset,
+        zoom: zoom
     }
 })();
 
