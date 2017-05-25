@@ -123,3 +123,8 @@ button {
 .zoom-container .btn:hover {
     background: #D6D6D6;
 }
+
+.zoom-container .btn.disable {
+    background: rgba(255, 255, 255, 0.3);
+    cursor: default;
+}

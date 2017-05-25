@@ -1,6 +1,46 @@
 'use strict';
+// 节流函数工厂
+var throttle = function(fn, delay) {
+    var timer;
+    var firstTime = true;
+
+    return function() {
+        var self = this;
+        var args = arguments;
+
+        if (firstTime) {
+            fn.apply(self, arguments);
+            return firstTime = false;
+        }
+
+        if (timer) {
+            return false;
+        }
+
+        timer = setTimeout(function() {
+            clearTimeout(timer);
+            timer = null;
+            fn.apply(self, args);
+        }, delay || 100);
+    }
+}
+
+var limit = function(val, bottom, top) {
+    if (val < bottom) {
+        val = bottom;
+    } else if (val > top) {
+        val = top;
+    }
+
+    return val;
+}
+
+var getPosVal = function(string) {
+    return parseFloat(string.split('px')[0]); 
+}
 
 var zoomLevel = 1;
+var ratio;
 
 var openImg = (function() {
     var imgInput = document.getElementById('imgInput');
@@ -18,8 +58,13 @@ var openImg = (function() {
         Mask.show();
         Mask.setText('加载中...');
 
+        ZoomTool.disableZoomIn();
+        ZoomTool.disableZoomOut();
+
         imgNode.onload = function() {
             Mask.hide();
+            ZoomTool.enableZoomIn();
+            ZoomTool.enableZoomOut();
             Thumbnail.reset();
             Thumbnail.setImg(imgNode.src);
             Thumbnail.setSelected();
@@ -53,13 +98,116 @@ var Mask = (function() {
     }
 })();
 
+// 中介者
+var mediator = (function() {
+    var moveCanvas = function() {
+        var args = [].slice.apply(arguments);
+
+        var e = args.shift();
+
+        var startX = args[0],
+            startY = args[1];
+
+        var dx = e.offsetX - startX,
+            dy = e.offsetY - startY;
+
+        Canvas.drawImage(dx, dy);
+        Thumbnail.setPos(dx * ratio, dy * ratio);
+    }
+
+    var moveSelectedBox = function() {
+        var args = [].slice.apply(arguments);
+
+        var e = args.shift();
+
+        var startX = args[0],
+            startY = args[1];
+
+        var dx = e.pageX - startX,
+            dy = e.pageY - startY;
+
+        Canvas.drawImage(-dx / ratio, -dy / ratio);
+        Thumbnail.setPos(-dx, -dy);
+    }
+
+    var setOffset = {
+        'canvas': function() {
+            var args = [].slice.apply(arguments);
+
+            var e = args.shift();
+
+            var startX = args[0],
+                startY = args[1];
+
+            var dx = e.offsetX - startX,
+                dy = e.offsetY - startY;
+
+            Canvas.setOffset(dx, dy);
+            Thumbnail.setOffset();
+        },
+
+        'selectedBox': function() {
+            var args = [].slice.apply(arguments);
+
+            var e = args.shift();
+
+            var startX = args[0],
+                startY = args[1];
+
+            var dx = e.pageX - startX,
+                dy = e.pageY - startY;
+
+            Canvas.setOffset(-dx / ratio, -dy / ratio);
+            Thumbnail.setOffset();
+        }
+    }
+
+    var zoom = function() {
+        ZoomTool.setZoomLevelVal(zoomLevel);
+        Canvas.drawImage();
+        Thumbnail.setSelected();
+        Thumbnail.setPos();
+    }
+
+    return {
+        moveCanvas: moveCanvas,
+        moveSelectedBox: moveSelectedBox,
+        setOffset: setOffset,
+        zoom: zoom
+    }
+})();
+
 var Thumbnail = (function() {
     var thumbnailImg = document.getElementById('thumbnail');
     var selectedBox = document.getElementById('selected');
 
-    var ratio;
     var offsetX = 0,
         offsetY = 0;
+
+    var startX, startY;
+
+    selectedBox.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+
+        startX = e.pageX;
+        startY = e.pageY;
+
+        selectedBox.addEventListener('mousemove', dragSelectedBox);
+        document.body.addEventListener('mouseup', releaseSelectedBox);
+    })
+
+    var throttleMoveSelectedBox = throttle(mediator.moveSelectedBox, 16);
+
+    var dragSelectedBox = function(e) {
+        e.preventDefault();
+        throttleMoveSelectedBox(e, startX, startY);
+    }
+
+    var releaseSelectedBox = function(e) {
+        document.body.removeEventListener('mouseup', releaseSelectedBox);
+        mediator.setOffset['selectedBox'](e, startX, startY);
+        selectedBox.removeEventListener('mousemove', dragSelectedBox);
+    }
 
     var setImg = function(src) {
         thumbnailImg.src = src;
@@ -85,16 +233,16 @@ var Thumbnail = (function() {
         var disX = dx || 0;
         var disY = dy || 0;
 
-        var x = limit(-disX * ratio + offsetX, 0, thumbnailImg.offsetWidth - selectedBox.offsetWidth);
-        var y = limit(-disY * ratio + offsetY, 0, thumbnailImg.offsetHeight - selectedBox.offsetHeight);
+        var x = limit(-disX + offsetX, 0, thumbnailImg.offsetWidth - selectedBox.offsetWidth);
+        var y = limit(-disY + offsetY, 0, thumbnailImg.offsetHeight - selectedBox.offsetHeight);
 
         selectedBox.style.left = x + 'px';
         selectedBox.style.top = y + 'px';
     }
 
-    var setOffset = function(dx, dy) {
-        offsetX += -dx * ratio;
-        offsetY += -dy * ratio;
+    var setOffset = function() {
+        offsetX = getPosVal(selectedBox.style.left);
+        offsetY = getPosVal(selectedBox.style.top);
 
         offsetX = limit(offsetX, 0, thumbnailImg.offsetWidth - selectedBox.offsetWidth);
         offsetY = limit(offsetY, 0, thumbnailImg.offsetHeight - selectedBox.offsetHeight);
@@ -132,28 +280,31 @@ var Canvas = (function() {
     canvas.addEventListener('mousedown', function(e) {
         // 只监听右键
         if (e.button === 2) {
-            startX = e.offsetX,
-                startY = e.offsetY;
+            startX = e.offsetX;
+            startY = e.offsetY;
 
-            canvas.addEventListener('mousemove', mouseMove);
-            document.body.addEventListener('mouseup', mouseUp);
+            canvas.addEventListener('mousemove', dragCanvas);
+            document.body.addEventListener('mouseup', releaseCanvas);
         }
     }, false);
 
-    var mouseMove = function(e) {
-        var throttleMoveCanvas = throttle(mediator.moveCanvas, 16);
-        throttleMoveCanvas(e, startX, startY);
+    var throttleDragCanvas = throttle(mediator.moveCanvas, 16);
+
+    var dragCanvas = function(e) {
+        throttleDragCanvas(e, startX, startY);
     }
 
-    var mouseUp = function(e) {
+    var releaseCanvas = function(e) {
         if (e.button === 2) {
-            mediator.setOffset(e, startX, startY);
-
-            canvas.removeEventListener('mousemove', mouseMove);
+            document.body.removeEventListener('mouseup', releaseCanvas);
+            mediator.setOffset['canvas'](e, startX, startY);
+            canvas.removeEventListener('mousemove', dragCanvas);
         }
     }
 
     var setOffset = function(dx, dy) {
+        console.log(dx, dy);
+
         offsetX += dx;
         offsetY += dy;
 
@@ -175,8 +326,6 @@ var Canvas = (function() {
 
         x = -limit(-(offsetX + disX) * zoomLevel, 0, canvasImg.naturalWidth * zoomLevel - canvas.width) / zoomLevel;
         y = -limit(-(offsetY + disY) * zoomLevel, 0, canvasImg.naturalHeight * zoomLevel - canvas.height) / zoomLevel;
-
-        console.log(-(offsetX + disX), canvasImg.naturalWidth * zoomLevel - canvas.width);
 
         ctx.drawImage(canvasImg, x, y);
     }
@@ -210,6 +359,26 @@ var ZoomTool = (function() {
     var zoomOutBtn = document.getElementById('zoomOut');
     var zoomLevelVal = document.getElementById('zoomLevel');
 
+    var disableZoomIn = function() {
+        zoomInBtn.disabled = true;
+        zoomInBtn.classList.add('disable');
+    }
+
+    var enableZoomIn = function() {
+        zoomInBtn.disabled = false;
+        zoomInBtn.classList.remove('disable');
+    }
+
+    var disableZoomOut = function() {
+        zoomOutBtn.disabled = true;
+        zoomOutBtn.classList.add('disable');
+    }
+
+    var enableZoomOut = function() {
+        zoomOutBtn.disabled = false;
+        zoomOutBtn.classList.remove('disable');
+    }
+
     var zoomIn = function() {
         zoomLevel += 0.2;
         zoomLevel = zoomLevel.toFixed(1);
@@ -232,88 +401,10 @@ var ZoomTool = (function() {
     }
 
     return {
-        setZoomLevelVal: setZoomLevelVal
+        setZoomLevelVal: setZoomLevelVal,
+        enableZoomIn: enableZoomIn,
+        disableZoomIn: disableZoomIn,
+        enableZoomOut: enableZoomOut,
+        disableZoomOut: disableZoomOut
     }
 })();
-
-// 中介者
-var mediator = (function() {
-    var moveCanvas = function() {
-        var args = [].slice.apply(arguments);
-
-        var e = args.shift();
-
-        var startX = args[0],
-            startY = args[1];
-
-        var dx = e.offsetX - startX,
-            dy = e.offsetY - startY;
-
-        Canvas.drawImage(dx, dy);
-        Thumbnail.setPos(dx, dy);
-    }
-
-    var setOffset = function() {
-        var args = [].slice.apply(arguments);
-
-        var e = args.shift();
-
-        var startX = args[0],
-            startY = args[1];
-
-        var dx = e.offsetX - startX,
-            dy = e.offsetY - startY;
-
-        Canvas.setOffset(dx, dy);
-        Thumbnail.setOffset(dx, dy);
-    }
-
-    var zoom = function() {
-        ZoomTool.setZoomLevelVal(zoomLevel);
-        Canvas.drawImage();
-        Thumbnail.setSelected();
-        Thumbnail.setPos();
-    }
-
-    return {
-        moveCanvas: moveCanvas,
-        setOffset: setOffset,
-        zoom: zoom
-    }
-})();
-
-// 节流函数工厂
-var throttle = function(fn, delay) {
-    var timer;
-    var firstTime = true;
-
-    return function() {
-        var self = this;
-        var args = arguments;
-
-        if (firstTime) {
-            fn.apply(self, arguments);
-            return firstTime = false;
-        }
-
-        if (timer) {
-            return false;
-        }
-
-        timer = setTimeout(function() {
-            clearTimeout(timer);
-            timer = null;
-            fn.apply(self, args);
-        }, delay || 100);
-    }
-}
-
-var limit = function(val, bottom, top) {
-    if (val < bottom) {
-        val = bottom;
-    } else if (val > top) {
-        val = top;
-    }
-
-    return val;
-}
