@@ -36,7 +36,7 @@ var limit = function(val, bottom, top) {
 }
 
 var getPosVal = function(string) {
-    return parseFloat(string.split('px')[0]); 
+    return parseFloat(string.split('px')[0]);
 }
 
 var zoomLevel = 1;
@@ -45,32 +45,45 @@ var ratio;
 var openImg = (function() {
     var imgInput = document.getElementById('imgInput');
 
+    var allowedType = ["image/png", "image/jpeg", "image/gif", "image/svg+xml"];
+
     imgInput.onchange = function() {
         openImg.call(this);
     };
 
+    var _isImg = function(file) {
+        for (var key in allowedType) {
+            if (allowedType[key] === file.type) {
+                return true;
+            }
+        }
+        alert('不支持的图片格式！');
+        return false;
+    }
+
     return function() {
         var fileList = this.files;
+        if (_isImg(fileList[0])) {
+            var imgNode = document.createElement('img');
+            imgNode.src = window.URL.createObjectURL(fileList[0]);
 
-        var imgNode = document.createElement('img');
-        imgNode.src = window.URL.createObjectURL(fileList[0]);
+            Mask.show();
+            Mask.setText('加载中...');
 
-        Mask.show();
-        Mask.setText('加载中...');
+            ZoomTool.disableZoomIn();
+            ZoomTool.disableZoomOut();
 
-        ZoomTool.disableZoomIn();
-        ZoomTool.disableZoomOut();
-
-        imgNode.onload = function() {
-            Mask.hide();
-            ZoomTool.enableZoomIn();
-            ZoomTool.enableZoomOut();
-            Thumbnail.reset();
-            Thumbnail.setImg(imgNode.src);
-            Thumbnail.setSelected();
-            Canvas.reset();
-            Canvas.setImage(this);
-            Canvas.drawImage(0, 0);
+            imgNode.onload = function() {
+                Mask.hide();
+                ZoomTool.enableZoomIn();
+                ZoomTool.enableZoomOut();
+                Thumbnail.reset();
+                Thumbnail.setImg(imgNode.src);
+                Thumbnail.setSelected();
+                Canvas.reset();
+                Canvas.setImage(this);
+                Canvas.drawImage(0, 0);
+            }
         }
     }
 })();
