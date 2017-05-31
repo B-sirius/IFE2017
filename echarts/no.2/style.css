@@ -1,0 +1,8 @@
+body {
+    margin: 0;
+}
+
+.chart-container {
+    width: 800px;
+    height: 700px;
+}
