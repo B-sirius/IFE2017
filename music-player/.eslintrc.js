@@ -29,6 +29,7 @@ module.exports = {
     'semi': 0,
     'no-unused-vars': 0,
     'no-undef': 0,
-    'no-cond-assign': 0
+    'no-cond-assign': 0,
+    'quotes': 0
   }
 }

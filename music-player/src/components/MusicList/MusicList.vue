@@ -56,7 +56,7 @@ export default {
         currIndex: {
             type: Number
         },
-        page: {
+        offset: {
             type: Number
         },
         allNum: {

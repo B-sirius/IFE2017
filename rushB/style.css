@@ -32,6 +32,10 @@ code {
     color: #0079d1;
 }
 
+.delete {
+    text-decoration: line-through;
+}
+
 .container {
     margin: 0 auto;
     max-width: 1100px;
