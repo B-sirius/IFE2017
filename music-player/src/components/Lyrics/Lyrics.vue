@@ -1,9 +1,11 @@
 <template>
     <div class="lyrics-container">
+        <div :style="backgroundObj" class="backImg"></div>
         <div class="lyrics-text" ref="lyricText" v-show="false" v-html="lyricText"></div>
         <div class="cover">
             <img class="img" :src="cover">
         </div>
+        <div class="mask"></div>        
         <div id="lyricList" class="lyrics-content-wrapper">
             <ul v-show="!loading" class="lyrics-content" ref="lyricsContent">
                 <li v-for="lyric in lyricList.list" :class="{on: lyric.on}">
@@ -30,7 +32,8 @@ export default {
       defaultCover:
         "http://7xrkxs.com1.z0.glb.clouddn.com/music/default_album.jpg", // 默认专辑封面url
       cover: "http://7xrkxs.com1.z0.glb.clouddn.com/music/default_album.jpg", // 当前歌曲专辑url
-      urlDetail: "http://115.159.46.181:3000/lyric?id=", // 歌曲id搜索
+      lyricApi: "http://115.159.46.181:3000/lyric?id=", // 歌曲id搜索
+      albumApi: "http://115.159.46.181:3000/album?id=",
       lyricText: "",
       lyricList: {
         autoScrollAble: false,
@@ -42,14 +45,24 @@ export default {
   },
   methods: {
     coverImage() {
-      // 专辑封面预加载
-      let self = this;
-      this.cover = this.defaultCover;
-      let img = new Image();
-      img.src = this.song.albumpic_big;
-      img.onload = function() {
-        self.cover = img.src;
-      };
+      if (!this.song.albumpic) {
+        this.$http.get(this.albumApi + this.song.albumId).then(response => {
+          if (response.body.songs) {
+            this.song.albumpic = response.body.songs[0].al.picUrl;
+            this.cover = this.song.albumpic;
+          }
+
+          let self = this;
+          this.cover = this.defaultCover;
+          let img = new Image();
+          img.src = this.song.albumpic;
+          img.onload = function() {
+            self.cover = img.src;
+          };
+        });
+      } else {
+        this.cover = this.song.albumpic;
+      }
     },
     renderLyrics() {
       // 对歌词模块进行渲染
@@ -57,15 +70,14 @@ export default {
 
       this.coverImage(); // 加载头图
 
-      this.$http.get(this.urlDetail + this.song.songid).then(response => {
+      this.$http.get(this.lyricApi + this.song.songid).then(response => {
         if (response.data.lrc) {
-            this.lyricText = response.data.lrc.lyric; // 将会被渲染到html中，原本lyric中的html code也会被解析好
+          this.lyricText = response.data.lrc.lyric; // 将会被渲染到html中，原本lyric中的html code也会被解析好
         } else {
-            this.lyricText = '';
+          this.lyricText = "";
         }
         this.$nextTick(() => {
           this.lyricList.list = this.getLyricList();
-
           this.setListScroll();
 
           this.loading = false;
@@ -93,21 +105,19 @@ export default {
         }
 
         lyrics.forEach((val, index) => {
-          if (index > 4) {
-            // 之所以大于4,参照返回的数据格式
-            let obj = {};
-            let pattern = /\[(\d+):(\d+)\.(\d+)?\](.+)/g;
-            let arr = pattern.exec(val);
+          let obj = {};
+          let pattern = /\[(\d+):(\d+)\.(\d+)?\](.*)/g;
+          let arr = pattern.exec(val);
 
-            obj.min = arr[1];
-            obj.sec = arr[2];
-            obj.ms = '0.' + arr[3];
-            obj.text = arr[4];
-            obj.totalTime = obj.min * 60 + obj.sec + parseFloat(obj.ms);
+          if (arr) {
+            obj.min = parseFloat(arr[1]);
+            obj.sec = parseFloat(arr[2]);
+            obj.ms = parseFloat("0." + arr[3]);
+            obj.text = arr[4] || "";
+            obj.totalTime = obj.min * 60 + obj.sec + obj.ms;
             obj.on = false;
-            if (obj.text !== "") {
-              lyricObjs.push(obj);
-            }
+
+            lyricObjs.push(obj);
           }
         });
       } else {
@@ -200,18 +210,48 @@ export default {
         });
       }
     }
+  },
+  computed: {
+    backgroundObj() {
+      return {
+        backgroundImage: `url(${this.cover})`
+      };
+    }
   }
 };
 </script>
 <style lang="scss">
 $textColor: rgba(225, 225, 225, 0.8);
 $onColor: #31c27c;
+$maskBack: rgba(0, 0, 0, 0.35);
 .lyrics-container {
   position: relative;
   height: 100%;
   color: $textColor;
   text-align: center;
+  .mask {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background: $maskBack;
+  }
+  .backImg {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-repeat: no-repeat;
+    background-position: 50%;
+    background-size: cover;
+    filter: blur(90px);
+    opacity: 0.6;
+  }
   .cover {
+    position: relative;
+    z-index: 1;
     img {
       width: 186px;
       height: 186px;

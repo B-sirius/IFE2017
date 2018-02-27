@@ -1,7 +1,5 @@
 <template>
     <div class="app" id="app">
-        <div :style="backgroundObj" class="backImg"></div>
-        <div class="mask"></div>
         <div class="main-content">
             <div class="search-container">
                 <div class="search-wrapper">
@@ -41,7 +39,7 @@ export default {
   data() {
     return {
       urlSearch: "http://115.159.46.181:3000/search?limit=20&keywords=", // 关键词搜索
-      searchText: "undertale", // 记录上次搜索的关键词
+      searchText: "metal gear solid", // 记录上次搜索的关键词
       songList: [], // 目前的歌曲列表
       playedList: [], // 播放过的队列
       currentSong: {}, // 当前播放歌曲
@@ -52,7 +50,8 @@ export default {
       playMode: "order", // 播放模式
       listScroll: null, // 列表滚动条
       scrollPos: 0, // 滚动条位置信息
-      listLoading: false // 列表是否在加载状态
+      listLoading: false, // 列表是否在加载状态
+      albumpic: ""
     };
   },
   methods: {
@@ -75,7 +74,7 @@ export default {
         song.songid = item.id;
         song.songname = item.name;
         song.singername = item.artists[0].name;
-        song.albumpic_big = 'http://p1.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg';
+        song.albumId = item.album.id;
         song.albumname = item.album.name;
         return song;
       });
@@ -288,13 +287,6 @@ export default {
       this.$refs.lyrics.checkLyric(time);
     }
   },
-  computed: {
-    backgroundObj() {
-      return {
-        backgroundImage: `url(${this.currentSong.albumpic_big})`
-      };
-    }
-  },
   created() {
     this.default();
   }
@@ -302,7 +294,6 @@ export default {
 </script>
 <style lang="scss">
 $bodyBack: #42474c;
-$maskBack: rgba(0, 0, 0, 0.35);
 $scrollColor: rgba(255, 255, 255, 0.1);
 $scrollWrapperColor: rgba(255, 255, 255, 0.1);
 $searchColor: rgba(255, 255, 255, 0.07);
@@ -337,22 +328,6 @@ html {
   }
   .app {
     height: 100%;
-    .backImg {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      background-repeat: no-repeat;
-      background-position: 50%;
-      background-size: cover;
-      filter: blur(90px);
-      opacity: 0.6;
-    }
-    .mask {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      background: $maskBack;
-    }
     .main-content {
       position: absolute;
       top: 80px;
@@ -369,6 +344,7 @@ html {
         margin-top: -100px;
         text-align: center;
         height: 70px;
+        z-index: 1;
         .search-wrapper {
           position: relative;
           display: inline-block;
@@ -428,6 +404,7 @@ html {
         width: 700px;
         height: 100%;
         overflow: hidden;
+        z-index: 1;
       }
       .lyrics-wrapper {
         vertical-align: top;
