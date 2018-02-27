@@ -2,7 +2,7 @@
 
 > html5音乐模放器
 
-使用了易源API来获得音乐相关数据
+接口更换为[@Binaryify](https://github.com/Binaryify)的[nodejs网易云音乐api](https://github.com/Binaryify/NeteaseCloudMusicApi)
 
 demo: http://music.b-sirius.me
 
