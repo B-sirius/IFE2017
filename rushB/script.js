@@ -58,6 +58,8 @@ var initDemo = (function() {
         var block2 = $('block2');
         var btn2 = $('btn2');
 
+        block2.style.transform = 'rotate(30deg)';
+
         var rush2 = new Rush(block2).add({
             translateX: 200,
             rotateZ: 360
