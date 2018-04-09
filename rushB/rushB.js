@@ -281,6 +281,8 @@
                         t = getTransform(t);
 
                         beginValue = t[key] || 0;
+                    } else {
+                        beginValue = 0;
                     }
 
                     el.transformCache[key] = {
